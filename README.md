@@ -1,0 +1,42 @@
+# Nail Salon Tycoon
+
+A terminal game for trying out a day in a nail salon before you work in one.
+You play a first-time nail technician with 6 clients: 3 appointments at set
+times and 3 walk-ins who show up at random. For each client you pick the steps
+of the service one at a time:
+
+- ask about health conditions,
+- ask the client to wash their hands (hand services only),
+- remove old product if there is any,
+- file, buff, and polish.
+
+Do every step in the right order and the client gives you a star and pays for
+the service (Manicure $25, Pedicure $35, Mani + Pedi combo $55). Get anything
+wrong and you earn nothing for that client. At the end of the day you see your
+total earnings and whether you met the $150 daily goal.
+
+The full rules are in [spec.md](spec.md).
+
+## Run the game
+
+```bash
+python3 game.py
+```
+
+To replay the same day, give it a seed: `python3 game.py --seed 42`.
+
+## Run the tests
+
+```bash
+python3 -m pytest
+```
+
+You need Python 3.10 or newer. The game uses only the standard library, and
+pytest is the only extra tool.
+
+## Files
+
+- `salon.py`: all the game rules (no input or printing)
+- `game.py`: the terminal menus and messages
+- `tests/`: one test file per requirement (R1–R6)
+- `docs/decisions/`: decision records
