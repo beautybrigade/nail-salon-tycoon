@@ -25,8 +25,9 @@ For the combo, the hands are always done first, then the feet.
   - **3 walk-ins** who show up at random. Each walk-in gets a different hour,
     picked at random from the free hours (9, 11, 13, 15, 16), so a walk-in
     never collides with an appointment.
-- Clients are served in time order. The game says whether each client is an
-  appointment or a walk-in.
+- Clients are served in time order. When a client arrives, the game shows
+  their time, whether they are an appointment or a walk-in, their service and
+  price, and whether they already have product (old polish) on their nails.
 - Each client's service is chosen at random (all three equally likely), and so
   is whether they already have product on their nails (50% chance) and whether
   they have a health condition (see R2).
