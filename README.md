@@ -8,7 +8,8 @@ times and 3 walk-ins who show up at random. For each client you pick the steps
 of the service one at a time:
 
 - ask about health conditions,
-- ask the client to wash their hands (hand services only),
+- ask the client to wash their hands (before working on hands),
+- wash their feet in the foot bath (before working on feet),
 - remove old product if there is any,
 - file, buff, and polish.
 
@@ -17,7 +18,8 @@ the service (Manicure $25, Pedicure $35, Mani + Pedi combo $55). Get anything
 wrong and you earn nothing for that client. At the end of the day you see your
 total earnings and whether you met the $150 daily goal.
 
-The full rules are in [spec.md](spec.md).
+The game shows these rules before the day begins. The full rules are in
+[spec.md](spec.md).
 
 ## Run the game
 
