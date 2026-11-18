@@ -10,13 +10,18 @@ These rules apply to every session in this project.
    `salon.py`, which must never call `input()` or `print()`. `game.py` holds
    only the terminal part (menus, prompts, printing) and calls `salon.py`.
    Randomness in `salon.py` comes from a `random.Random` that is passed in, so
-   tests can use a seed.
+   tests can use a seed. The browser version follows the same split:
+   `web.py` only serves pages and turns `salon.py` results into JSON, and the
+   files in `static/` only draw and animate. No game rule (which steps are
+   right, stars, earnings, nail looks) may be written in JavaScript.
 3. **Every test names its requirement.** Each test's name or docstring names
    the requirement ID it checks (for example `R4`). A test must fail if the
    code it checks is wrong.
 4. **Standard library only.** No third-party packages, no virtual
    environments, no API keys, logins, or paid services. pytest is the only
-   extra tool. Run the tests with `python3 -m pytest`.
+   extra tool. Run the tests with `python3 -m pytest`. The browser page uses
+   plain HTML, CSS, and JavaScript written in this repository: no CDN links,
+   downloaded libraries, or web fonts, so the game works offline.
 5. **Never undo or amend a commit.** No `git commit --amend`, `git reset`,
    `git revert` of the student's work, rebases, or force pushes. Fix mistakes
    with a new commit. Do not push; the student pushes.
