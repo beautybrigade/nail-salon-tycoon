@@ -1,8 +1,10 @@
-# Nail Salon Tycoon — Spec (rounds 1 and 2)
+# Nail Salon Tycoon — Spec (rounds 1 to 3)
 
 A game in which the player is a first-time nail technician working one day in a
 salon. Round 1 made it a terminal game (R1–R6). Round 2 adds an animated
-browser version (R7, R8); the rules of the day stay the same. Decisions marked
+browser version (R7, R8); the rules of the day stay the same. Round 3 adds a
+rules screen before the day begins (R9) and a foot-washing step for pedicures
+(R3 changed). Decisions marked
 **(student)** were answered by the student; the rest were chosen by the
 assistant and may be revisited.
 
@@ -36,15 +38,18 @@ For the combo, the hands are always done first, then the feet.
 
 ## Steps the player can take (R2, R3, R4) **(student: one step at a time)**
 
+(Round 3 added step 3, **Wash feet in foot bath**; see "Round 3" below.)
+
 For each client, the player picks steps one at a time from a numbered menu:
 
 1. Ask about health conditions
 2. Ask client to wash hands
-3. Remove product
-4. File
-5. Buff
-6. Polish
-7. Finish service
+3. Wash feet in foot bath
+4. Remove product
+5. File
+6. Buff
+7. Polish
+8. Finish service
 
 The player can pick any step in any order. The game does not stop them; it
 judges the whole sequence when they choose **Finish service**.
@@ -57,15 +62,18 @@ For each client the one correct sequence is:
 2. Then, for each area in service order (hands, then feet for a combo):
    - **Ask client to wash hands** (R3), only before working on the hands.
      Never for a pedicure, and for a combo only once, before the hands.
+   - **Wash feet in foot bath** (R3, round 3), only before working on the
+     feet. Never for a manicure, and for a combo only once, after the hands
+     are polished and before any work on the feet.
    - **Remove product** (R4), only if the client arrived with product on.
    - **File**, then **Buff**, then **Polish** (R4).
 
 Examples:
 
-- Manicure, no product: health, wash, file, buff, polish
-- Pedicure, with product: health, remove, file, buff, polish
-- Combo, with product: health, wash, remove, file, buff, polish, remove, file,
-  buff, polish
+- Manicure, no product: health, wash hands, file, buff, polish
+- Pedicure, with product: health, wash feet, remove, file, buff, polish
+- Combo, with product: health, wash hands, remove, file, buff, polish,
+  wash feet, remove, file, buff, polish
 
 (For a combo, "has product" applies to both hands and feet.)
 
@@ -85,6 +93,9 @@ correct sequence. That includes:
 - not asking for hand washing before a hand service;
 - asking for hand washing when it isn't needed (a pedicure, or the feet part of
   a combo);
+- not washing the feet before working on them (round 3);
+- washing the feet when it isn't needed (a manicure, or before the hands are
+  done in a combo) (round 3);
 - skipping product removal when product is on, or removing product when there
   is none;
 - skipping filing, buffing, or polishing, or doing them out of order;
@@ -142,6 +153,7 @@ first **Polish** step (the hands are done), matching "hands, then feet".
 |-----------------------------|-----------------------------------------------------|
 | Ask about health conditions | the client answers in a speech bubble               |
 | Ask client to wash hands    | soap bubbles rise around the hand                   |
+| Wash feet in foot bath      | (round 3) see "Round 3: foot washing" below         |
 | Remove product              | a cotton pad wipes across the nails                 |
 | File                        | a nail file slides back and forth over the nails    |
 | Buff                        | a buffer block rubs in circles over the nails       |
@@ -177,6 +189,46 @@ example, polishing before filing still paints the nails.
   judged.
 - The salon itself is colorful: bright background, colored tools and bottles,
   confetti when the client gives a star.
+
+## Round 3: rules screen (R9) **(student: show the full step order)**
+
+- Before the day starts, the game shows the rules. The day begins only when
+  the player chooses to begin.
+  - Browser: the rules appear in a window over the salon with a
+    **Begin the day** button. No client is created until the player presses it.
+  - Terminal: `game.py` prints the rules, then waits for the player to press
+    Enter before the first client arrives.
+- The rules say:
+  - how the day works: opening hours, 6 clients, the 3 appointment times, and
+    that 3 walk-ins come at random times;
+  - the services and their prices (the combo is hands first, then feet);
+  - the full correct order of steps: health question first; then for each area
+    wash it (hands: ask client to wash hands; feet: wash feet in foot bath),
+    remove product only if there is old polish, then file, buff, polish;
+  - that the client gives a star and pays the full price only if every step is
+    right, and pays nothing otherwise;
+  - the daily goal ($150).
+- The rules text is written once, in `salon.py`, built from the same settings
+  the game uses (prices, goal, hours), so it can't go out of date. Both the
+  terminal and the browser show that text (see decision 0004).
+- "Play another day" in the browser goes straight to a new day without showing
+  the rules again.
+
+## Round 3: foot washing for pedicures (R3 changed) **(student)**
+
+- Washing the feet is a new step the player must pick, **Wash feet in foot
+  bath**, judged like every other step (see "The correct sequence" and
+  "Mistakes" above). It works for the feet the way hand washing works for the
+  hands. **(student: required step, judged)**
+- In a combo, the feet are washed after the hands are polished, just before
+  the work on the feet starts. **(student)**
+- Both versions get the new step. **(student)** In the terminal it prints
+  "The client's feet soak in the warm foot bath."
+- Animation (browser): a foot bath of blue water rises around the foot, with
+  ripples and bubbles, then drains away. Like hand washing, it does not change
+  the nails. The animation name is `wash-feet`, separate from `wash-hands`.
+- Like every wrong step, picking it at the wrong time still plays the
+  animation, on whichever area is shown, and is judged only at **Finish**.
 
 ## Running
 
