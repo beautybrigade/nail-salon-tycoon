@@ -45,6 +45,7 @@ class Step(Enum):
 
     ASK_HEALTH = "Ask about health conditions"
     WASH_HANDS = "Ask client to wash hands"
+    WASH_FEET = "Wash feet in foot bath"  # R3, round 3
     REMOVE_PRODUCT = "Remove product"
     FILE = "File"
     BUFF = "Buff"
@@ -126,11 +127,14 @@ def health_answer(client: Client) -> str:
 
 
 def required_steps(client: Client) -> list[Step]:
-    """R2, R3, R4: the one correct sequence of steps for this client."""
+    """R2, R3, R4: the one correct sequence of steps for this client.
+
+    Each area is washed just before it is worked on: hands with WASH_HANDS,
+    feet with WASH_FEET (R3 as changed in round 3).
+    """
     steps = [Step.ASK_HEALTH]
     for area in client.service.areas:
-        if area == HANDS:
-            steps.append(Step.WASH_HANDS)
+        steps.append(Step.WASH_HANDS if area == HANDS else Step.WASH_FEET)
         if client.has_product:
             steps.append(Step.REMOVE_PRODUCT)
         steps += [Step.FILE, Step.BUFF, Step.POLISH]
@@ -180,7 +184,7 @@ def nail_looks(client: Client, steps_taken: list[Step]) -> dict[str, NailLook]:
     """R8: replay the player's steps and return each area's nail look.
 
     This shows what the player did, right or wrong; judging happens only in
-    finish_service. Asking about health and washing hands do not change nails.
+    finish_service. Asking about health and washing do not change nails.
     """
     looks = {
         area: NailLook(client.has_product, False, False, None)
@@ -202,6 +206,57 @@ def nail_looks(client: Client, steps_taken: list[Step]) -> dict[str, NailLook]:
         looks[area] = look
         done.append(step)
     return looks
+
+
+# --- The rules shown before the day begins (R9) ----------------------------
+
+@dataclass(frozen=True)
+class RuleSection:
+    heading: str
+    lines: tuple[str, ...]
+
+
+def rules() -> list[RuleSection]:
+    """R9: the rules of the day, built from the same settings the game uses.
+
+    Both the terminal and the browser show this text, so it is written once.
+    """
+    appointments = ", ".join(f"{h:02d}:00" for h in APPOINTMENT_HOURS)
+    clients = len(APPOINTMENT_HOURS) + WALK_IN_COUNT
+    return [
+        RuleSection("Your day", (
+            f"The salon is open from {OPEN_HOUR:02d}:00 to "
+            f"{LAST_SLOT_HOUR + 1:02d}:00. You will see {clients} clients, "
+            "one at a time.",
+            f"{len(APPOINTMENT_HOURS)} clients have appointments at "
+            f"{appointments}.",
+            f"{WALK_IN_COUNT} walk-in clients show up at random times.",
+        )),
+        RuleSection("Services", tuple(
+            f"{s.name}: ${s.price}"
+            + (" (hands first, then feet)" if len(s.areas) > 1 else "")
+            for s in SERVICES
+        )),
+        RuleSection("Steps, in this order", (
+            f"1. {Step.ASK_HEALTH.value}, first, for every client.",
+            "2. Then for each area (hands first in a combo):",
+            f"   a. Wash it: {Step.WASH_HANDS.value} for the hands, "
+            f"{Step.WASH_FEET.value} for the feet.",
+            f"   b. {Step.REMOVE_PRODUCT.value}, only if the client has old "
+            "polish on.",
+            f"   c. {Step.FILE.value}, then {Step.BUFF.value}, then "
+            f"{Step.POLISH.value}.",
+            "3. Finish service.",
+        )),
+        RuleSection("Stars and pay", (
+            "If every step is right and in order, the client gives you a star "
+            "and pays the full price.",
+            "Any missing, extra, or out-of-order step means no star and $0.",
+        )),
+        RuleSection("Your goal", (
+            f"Earn at least ${DAILY_GOAL} by the end of the day.",
+        )),
+    ]
 
 
 # --- End of the day ---------------------------------------------------------
