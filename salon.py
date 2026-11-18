@@ -240,8 +240,8 @@ def rules() -> list[RuleSection]:
         RuleSection("Steps, in this order", (
             f"1. {Step.ASK_HEALTH.value}, first, for every client.",
             "2. Then for each area (hands first in a combo):",
-            f"   a. Wash it: {Step.WASH_HANDS.value} for the hands, "
-            f"{Step.WASH_FEET.value} for the feet.",
+            f'   a. Wash it: "{Step.WASH_HANDS.value}" for the hands, '
+            f'"{Step.WASH_FEET.value}" for the feet.',
             f"   b. {Step.REMOVE_PRODUCT.value}, only if the client has old "
             "polish on.",
             f"   c. {Step.FILE.value}, then {Step.BUFF.value}, then "
