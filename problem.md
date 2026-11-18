@@ -10,3 +10,8 @@ Working in a salon setting can be nerve-wracking, especially for a first time na
 - R4: Each service must require filing, buffing, and polishing. If the client already has product on their nails, they will need to begin with product removal first.
 - R5: The client should rate the service with whether they are satisfied or not by giving the player a star at the end of the service. This will determine if money was made from the service. Doing the steps in the wrong order will make the client unsatisfied.
 - R6: At the end of the work day, the program must display the total earnings for the day, and determine if the daily goal was met. 
+
+# Round 2 requirements
+
+- R7: The game must be playable in a browser on my own computer, started with one command.
+- R8: The game must be animated. It should be from the nail technician's point of view and should display the filing, buffing, polishing, etc. Each step the player picks will have its own animation. The nails must change as the player goes; they look polished after the polish step. Introduce lots of color throughout the animation.
