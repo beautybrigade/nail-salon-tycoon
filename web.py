@@ -6,6 +6,7 @@ This starts a small web server on this computer only (127.0.0.1) and opens the
 game in the default browser. The page in static/ draws and animates the salon;
 every game rule stays in salon.py. The page and this server talk in JSON:
 
+    GET  /api/rules                               -> the rules (R9)
     POST /api/new-game  {}                        -> first client, step menu
     POST /api/step      {"game_id", "step"}       -> animation, nail looks
     POST /api/finish    {"game_id"}               -> star, next client or day
@@ -38,6 +39,7 @@ STATIC_FILES = {  # the only files the server hands out
 STEP_ANIMATIONS = {
     salon.Step.ASK_HEALTH: "ask-health",
     salon.Step.WASH_HANDS: "wash-hands",
+    salon.Step.WASH_FEET: "wash-feet",  # R3, round 3
     salon.Step.REMOVE_PRODUCT: "remove-product",
     salon.Step.FILE: "file-nails",
     salon.Step.BUFF: "buff-nails",
@@ -82,6 +84,12 @@ def client_json(client: salon.Client | None) -> dict | None:
         "working_area": salon.working_area(client, []),
         "nails": nails_json(client, []),
     }
+
+
+def rules_json() -> dict:
+    """R9: the rules from salon.py, for the rules screen."""
+    return {"sections": [{"heading": s.heading, "lines": list(s.lines)}
+                         for s in salon.rules()]}
 
 
 def day_json(day: salon.DayResult) -> dict:
@@ -137,9 +145,12 @@ class SalonHandler(BaseHTTPRequestHandler):
     def log_message(self, format, *args):  # keep the terminal quiet
         pass
 
-    # GET: the page and its files
+    # GET: the page, its files, and the rules
     def do_GET(self):
         path = urlsplit(self.path).path
+        if path == "/api/rules":
+            self._send_json(HTTPStatus.OK, rules_json())
+            return
         name = "index.html" if path == "/" else path.removeprefix("/static/")
         if path != "/" and not path.startswith("/static/"):
             name = ""
