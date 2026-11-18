@@ -11,7 +11,7 @@ import random
 
 import salon
 
-MENU = list(salon.Step)  # numbered 1..6 in this order
+MENU = list(salon.Step)  # numbered 1..7 in this order
 FINISH = len(MENU) + 1
 
 
@@ -59,6 +59,8 @@ def run_service(client: salon.Client) -> salon.ServiceResult:
             print(f"  Client: {salon.health_answer(client)}")
         elif step is salon.Step.WASH_HANDS:
             print("  The client washes their hands.")
+        elif step is salon.Step.WASH_FEET:
+            print("  The client's feet soak in the warm foot bath.")
         else:
             print(f"  You {step.value.lower()}.")
 
@@ -89,16 +91,34 @@ def print_summary(day: salon.DayResult) -> None:
         print(f"Daily goal of ${day.goal} not met. Try again tomorrow.")
 
 
+def print_rules() -> None:
+    """R9: show the rules (written in salon.py) before the day begins."""
+    print("=" * 60)
+    print("RULES")
+    for section in salon.rules():
+        print()
+        print(section.heading)
+        for line in section.lines:
+            print(f"  {line}")
+    print("=" * 60)
+
+
 def main(argv: list[str] | None = None) -> None:
     parser = argparse.ArgumentParser(description="Nail Salon Tycoon")
     parser.add_argument("--seed", type=int, help="replay the same day")
     args = parser.parse_args(argv)
 
+    print("Welcome to your first day at the salon!")
+    print_rules()
+    try:
+        input("Press Enter to begin the day... ")
+    except (EOFError, KeyboardInterrupt):
+        print("\nYou left the salon early. Goodbye!")
+        return
+
     rng = random.Random(args.seed)
     clients = salon.generate_day(rng)
-    print("Welcome to your first day at the salon!")
     print(f"You have {len(clients)} clients today. Goal: ${salon.DAILY_GOAL}.")
-
     try:
         results = [run_service(c) for c in clients]
     except (EOFError, KeyboardInterrupt):
