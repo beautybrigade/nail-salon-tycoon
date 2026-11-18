@@ -22,6 +22,18 @@ PRODUCT_CHANCE = 0.5
 HEALTH_CONDITION_CHANCE = 0.3
 HEALTH_CONDITIONS = ("sensitive skin", "diabetes", "allergic to acetone")
 
+# R8: bright polish colors a client can ask for (name -> hex color for drawing)
+POLISH_COLORS = {
+    "Cherry Red": "#e0115f",
+    "Hot Pink": "#ff3fa4",
+    "Tangerine": "#ff8c1a",
+    "Sunny Yellow": "#ffd60a",
+    "Lime Green": "#7bd629",
+    "Turquoise": "#1cc7c1",
+    "Electric Blue": "#2f6bff",
+    "Grape": "#8e44ec",
+}
+
 APPOINTMENT = "appointment"
 WALK_IN = "walk-in"
 
@@ -69,6 +81,7 @@ class Client:
     service: Service
     has_product: bool
     health_condition: str | None  # None means no conditions
+    polish_color: str = "Cherry Red"  # R8: a name from POLISH_COLORS
 
 
 def _random_client(rng: random.Random, hour: int, kind: str) -> Client:
@@ -79,7 +92,8 @@ def _random_client(rng: random.Random, hour: int, kind: str) -> Client:
         if rng.random() < HEALTH_CONDITION_CHANCE
         else None
     )
-    return Client(hour, kind, service, has_product, condition)
+    color = rng.choice(list(POLISH_COLORS))
+    return Client(hour, kind, service, has_product, condition, color)
 
 
 def free_hours() -> list[int]:
@@ -139,6 +153,57 @@ def finish_service(client: Client, steps_taken: list[Step]) -> ServiceResult:
     return ServiceResult(client, satisfied, stars, earned)
 
 
+# --- What the nails look like (R8) ------------------------------------------
+
+@dataclass(frozen=True)
+class NailLook:
+    """How one area's nails look right now, so the browser can draw them."""
+
+    has_product: bool          # old polish still on
+    filed: bool
+    buffed: bool
+    polish_color: str | None   # None until polished
+
+
+def _area_index(client: Client, steps_taken: list[Step]) -> int:
+    """Which area the next step works on. Each Polish finishes an area."""
+    polishes = sum(1 for s in steps_taken if s is Step.POLISH)
+    return min(polishes, len(client.service.areas) - 1)
+
+
+def working_area(client: Client, steps_taken: list[Step]) -> str:
+    """R8: the area shown now: hands, or feet after the first Polish in a combo."""
+    return client.service.areas[_area_index(client, steps_taken)]
+
+
+def nail_looks(client: Client, steps_taken: list[Step]) -> dict[str, NailLook]:
+    """R8: replay the player's steps and return each area's nail look.
+
+    This shows what the player did, right or wrong; judging happens only in
+    finish_service. Asking about health and washing hands do not change nails.
+    """
+    looks = {
+        area: NailLook(client.has_product, False, False, None)
+        for area in client.service.areas
+    }
+    done: list[Step] = []
+    for step in steps_taken:
+        area = working_area(client, done)
+        look = looks[area]
+        if step is Step.REMOVE_PRODUCT:
+            look = NailLook(False, look.filed, look.buffed, look.polish_color)
+        elif step is Step.FILE:
+            look = NailLook(look.has_product, True, look.buffed, look.polish_color)
+        elif step is Step.BUFF:
+            look = NailLook(look.has_product, look.filed, True, look.polish_color)
+        elif step is Step.POLISH:
+            look = NailLook(look.has_product, look.filed, look.buffed,
+                            client.polish_color)
+        looks[area] = look
+        done.append(step)
+    return looks
+
+
 # --- End of the day ---------------------------------------------------------
 
 @dataclass(frozen=True)
@@ -153,3 +218,45 @@ def end_of_day(results: list[ServiceResult], goal: int = DAILY_GOAL) -> DayResul
     """R6: total the day's earnings and check them against the daily goal."""
     total = sum(r.earned for r in results)
     return DayResult(tuple(results), total, goal, total >= goal)
+
+
+# --- A day in progress (used by the browser, R7) ----------------------------
+
+class Game:
+    """One work day being played: the clients, the current client's steps so
+    far, and the results of finished services. No input or printing."""
+
+    def __init__(self, rng: random.Random):
+        self.clients = generate_day(rng)
+        self.index = 0
+        self.steps: list[Step] = []
+        self.results: list[ServiceResult] = []
+
+    @property
+    def is_over(self) -> bool:
+        return self.index >= len(self.clients)
+
+    @property
+    def current_client(self) -> Client | None:
+        return None if self.is_over else self.clients[self.index]
+
+    def _require_client(self) -> Client:
+        if self.is_over:
+            raise ValueError("the day is over")
+        return self.clients[self.index]
+
+    def take_step(self, step: Step) -> None:
+        self._require_client()
+        self.steps.append(step)
+
+    def finish(self) -> ServiceResult:
+        """R5: judge the current client and move on to the next one."""
+        result = finish_service(self._require_client(), self.steps)
+        self.results.append(result)
+        self.steps = []
+        self.index += 1
+        return result
+
+    def day_result(self) -> DayResult:
+        """R6: the end-of-day totals for the services finished so far."""
+        return end_of_day(self.results)
