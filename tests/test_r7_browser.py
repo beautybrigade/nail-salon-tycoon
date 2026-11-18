@@ -67,7 +67,7 @@ def test_r7_game_refuses_steps_after_the_day_is_over():
 @pytest.fixture
 def server():
     srv = web.make_server("127.0.0.1", 0, seed=SEED)
-    thread = threading.Thread(target=srv.serve_forever, daemon=True)
+    thread = threading.Thread(target=srv.serve_forever, args=(0.05,), daemon=True)
     thread.start()
     host, port = srv.server_address[:2]
     yield f"http://{host}:{port}"
