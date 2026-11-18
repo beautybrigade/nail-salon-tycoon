@@ -1,10 +1,10 @@
-# Nail Salon Tycoon — Spec (round 1)
+# Nail Salon Tycoon — Spec (rounds 1 and 2)
 
-A terminal game in which the player is a first-time nail technician working one
-day in a salon. This spec describes how the game meets each requirement in
-`problem.md` (R1–R6). Decisions marked **(student)** were answered by the
-student before round 1; the rest were chosen by the assistant and may be
-revisited.
+A game in which the player is a first-time nail technician working one day in a
+salon. Round 1 made it a terminal game (R1–R6). Round 2 adds an animated
+browser version (R7, R8); the rules of the day stay the same. Decisions marked
+**(student)** were answered by the student; the rest were chosen by the
+assistant and may be revisited.
 
 ## Services **(student)**
 
@@ -106,9 +106,81 @@ After the 6th client the game shows:
 - the **total earnings** for the day;
 - whether the **daily goal of $150** was met (total ≥ $150 counts as met).
 
+## Round 2: playing in the browser (R7) **(student)**
+
+- One command starts the browser game: `python3 web.py`. It starts a small web
+  server on the player's own computer (address `http://127.0.0.1:<port>/`,
+  reachable only from this computer) and opens the game in the default browser.
+  Add `--seed N` to replay the same day, `--port N` to choose the port (default
+  8000), and `--no-browser` to skip opening the browser.
+- The terminal game still works: `python3 game.py`. Both versions use the same
+  rules in `salon.py`.
+- The browser plays the same day as the terminal game: 6 clients in time
+  order, the same 6 steps plus **Finish service**, the same judging (R5), and
+  the same end-of-day summary (R6).
+- Game rules stay in Python (`salon.py`). The page asks the server for each
+  result over a small JSON interface (see decision 0002), so the browser never
+  decides whether a client is satisfied.
+- Everything needed is in this repository: no internet, no downloaded
+  libraries, standard library only.
+
+## Round 2: animation (R8)
+
+### Point of view **(student: the nail technician's)**
+
+The player looks down at the work table from the technician's seat: the
+client's hand (or foot) rests on the table with the fingertips (or toes)
+pointing toward the player, so the nails are in full view. The technician's
+tools come in from the player's side of the table.
+
+For a combo, the hands are shown first. The view switches to the feet after the
+first **Polish** step (the hands are done), matching "hands, then feet".
+
+### Each step has its own animation **(student)**
+
+| Step                        | Animation                                           |
+|-----------------------------|-----------------------------------------------------|
+| Ask about health conditions | the client answers in a speech bubble               |
+| Ask client to wash hands    | soap bubbles rise around the hand                   |
+| Remove product              | a cotton pad wipes across the nails                 |
+| File                        | a nail file slides back and forth over the nails    |
+| Buff                        | a buffer block rubs in circles over the nails       |
+| Polish                      | a brush sweeps color onto the nails, then sparkles  |
+
+The player can't pick another step while an animation is playing.
+
+### The nails change as the player works **(student)**
+
+Each area (hands, feet) has a nail look that the server works out from the
+steps taken so far:
+
+- **old product**: if the client arrived with product, the nails show a dull,
+  chipped old color until **Remove product**;
+- **filed**: after **File**, the nails have a short, smooth, rounded tip;
+- **buffed**: after **Buff**, the nails have a soft shine;
+- **polished**: after **Polish**, the nails are the client's requested color
+  with a glossy shine.
+
+Steps change the area being worked on (hands, then feet after the first
+Polish in a combo). Wrong steps still animate and change the nails; for
+example, polishing before filing still paints the nails.
+**(student: show what you did, judge at the end)** Mistakes are only judged at
+**Finish service**, the same as round 1.
+
+### Lots of color **(student: client requests a color)**
+
+- Each client asks for a polish color when they arrive, picked at random from a
+  fixed palette of bright colors (for example Cherry Red, Hot Pink, Sunny
+  Yellow, Electric Blue). The color comes from the same seeded `random.Random`,
+  so a seed gives the same colors.
+- The requested color is what the Polish step paints. Color choice is not
+  judged.
+- The salon itself is colorful: bright background, colored tools and bottles,
+  confetti when the client gives a star.
+
 ## Running
 
-- One command starts the game: `python3 game.py`. Add `--seed N` to replay the
-  same day.
+- Browser game: `python3 web.py` (R7). Terminal game: `python3 game.py`. Both
+  take `--seed N` to replay the same day.
 - Tests: `python3 -m pytest`.
 - Only the Python standard library is used. pytest is the only extra tool.
