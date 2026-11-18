@@ -175,6 +175,25 @@ body {
   40%, 60% { fill: #cfeeff; }
 }
 
+/* Wash feet in foot bath (R3, round 3): warm water rises around the foot,
+   ripples spread, bubbles fizz up, then the water drains. */
+#foot-bath.play { animation: wash-feet 2.6s ease-in-out both; }
+@keyframes wash-feet {
+  0%   { opacity: 0; transform: translateY(120px); }
+  20%  { opacity: 1; transform: translateY(0); }
+  80%  { opacity: 1; transform: translateY(0); }
+  100% { opacity: 0; transform: translateY(120px); }
+}
+#foot-bath .ripple { fill: none; stroke: #ffffff; stroke-width: 3; opacity: 0;
+  transform-box: fill-box; transform-origin: center; }
+#foot-bath.play .ripple { animation: foot-ripple 1.4s ease-out var(--d) 1 both; }
+@keyframes foot-ripple {
+  0%   { opacity: .9; transform: scale(.3); }
+  100% { opacity: 0;  transform: scale(1.1); }
+}
+#foot-bath .fizz { fill: url(#g-bubble); stroke: #ffffff; stroke-width: 1.5; opacity: 0; }
+#foot-bath.play .fizz { animation: wash-hands 1.6s ease-out var(--d) both; }
+
 /* Remove product: a cotton pad wipes across the nails. */
 #cotton.play { animation: remove-product 1.8s ease-in-out both; }
 @keyframes remove-product {
@@ -362,6 +381,14 @@ body {
   border: 6px solid var(--pink);
   animation: modal-in .35s ease both;
 }
+.modal.rules { text-align: left; width: min(600px, 100%); }
+.modal.rules h2 { text-align: center; }
+.modal.rules h3 { margin: 14px 0 4px; color: var(--pink); }
+.modal.rules ul { margin: 0; padding-left: 20px; }
+.modal.rules li { margin: 3px 0; white-space: pre-wrap; }
+.modal.rules li.numbered { list-style: none; margin-left: -20px; }
+.modal.rules li.indent { margin-left: 4px; }
+.modal.rules #begin { display: block; margin: 16px auto 0; }
 @keyframes modal-in { from { transform: scale(.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 .modal h2 { margin-top: 0; color: var(--purple); }
 .modal .big-star { font-size: 4rem; color: var(--yellow); text-shadow: 3px 3px 0 var(--orange); }

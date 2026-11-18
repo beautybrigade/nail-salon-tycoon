@@ -15,6 +15,7 @@ const REDUCED = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 const ANIMATIONS = {
   "ask-health":     { tools: ["speech"],                       ms: 2400, changeAt: 0 },
   "wash-hands":     { tools: ["soap"],                         ms: 2300, changeAt: 0, washing: true },
+  "wash-feet":      { tools: ["foot-bath"],                    ms: 2600, changeAt: 0, washing: true },
   "remove-product": { tools: ["cotton"],                       ms: 1800, changeAt: 0.5 },
   "file-nails":     { tools: ["file"],                         ms: 1800, changeAt: 0.5 },
   "buff-nails":     { tools: ["buffer"],                       ms: 1800, changeAt: 0.5 },
@@ -51,6 +52,13 @@ const $ = (id) => document.getElementById(id);
 const sleep = (ms) => new Promise((done) => setTimeout(done, REDUCED ? Math.min(ms, 300) : ms));
 
 // --- Talking to the server ---------------------------------------------------
+
+async function getJson(path) {
+  const resp = await fetch(path);
+  const data = await resp.json();
+  if (!resp.ok) throw new Error(data.error || "Something went wrong");
+  return data;
+}
 
 async function api(path, body = {}) {
   const resp = await fetch(path, {
@@ -387,9 +395,43 @@ async function newGame() {
   }
 }
 
+// --- R9: the rules screen, before the day begins -------------------------------
+
+async function showRules() {
+  try {
+    const data = await getJson("/api/rules");
+    const body = $("rules-body");
+    body.innerHTML = "";
+    for (const section of data.sections) {
+      const h = document.createElement("h3");
+      h.textContent = section.heading;
+      const ul = document.createElement("ul");
+      for (const line of section.lines) {
+        const li = document.createElement("li");
+        li.textContent = line.trim();
+        if (/^\s*\w\.\s/.test(line)) li.className = "numbered"; // "1." or "a." already numbers it
+        if (line.startsWith(" ")) li.classList.add("indent");
+        ul.append(li);
+      }
+      body.append(h, ul);
+    }
+    $("begin").disabled = false;
+    $("begin").focus();
+  } catch (err) {
+    $("rules").hidden = true;
+    showError(err);
+  }
+}
+
+function beginDay() {
+  $("rules").hidden = true;
+  newGame();
+}
+
 // --- Start ---------------------------------------------------------------------
 
 drawDigits("hand-view", HAND_DIGITS);
 drawDigits("foot-view", FOOT_DIGITS);
 $("finish").addEventListener("click", finishService);
-newGame();
+$("begin").addEventListener("click", beginDay);
+showRules();

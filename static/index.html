@@ -39,6 +39,10 @@
           <pattern id="p-grit" width="6" height="6" patternUnits="userSpaceOnUse">
             <circle cx="2" cy="2" r="1" fill="#ffffff" opacity=".45"/>
           </pattern>
+          <linearGradient id="g-water" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#7fe3ff" stop-opacity=".55"/>
+            <stop offset="1" stop-color="#2f6bff" stop-opacity=".7"/>
+          </linearGradient>
           <radialGradient id="g-bubble" cx=".35" cy=".35" r=".7">
             <stop offset="0" stop-color="#ffffff"/>
             <stop offset=".6" stop-color="#b9f3ff" stop-opacity=".7"/>
@@ -79,6 +83,21 @@
             <circle cx="270" cy="250" r="9"  style="--d:.5s"/>
             <circle cx="330" cy="200" r="14" style="--d:.2s"/>
             <circle cx="300" cy="120" r="8"  style="--d:.55s"/>
+          </g>
+
+          <!-- R3 (round 3): the foot bath fills with warm water, then drains. -->
+          <g id="foot-bath" class="tool">
+            <rect class="water" x="150" y="190" width="300" height="230" rx="36" fill="url(#g-water)"/>
+            <ellipse class="ripple" cx="300" cy="230" rx="120" ry="14" style="--d:0s"/>
+            <ellipse class="ripple" cx="300" cy="230" rx="120" ry="14" style="--d:.6s"/>
+            <ellipse class="ripple" cx="300" cy="230" rx="120" ry="14" style="--d:1.2s"/>
+            <circle class="fizz" cx="190" cy="380" r="9"  style="--d:.3s"/>
+            <circle class="fizz" cx="240" cy="400" r="6"  style="--d:.7s"/>
+            <circle class="fizz" cx="300" cy="390" r="11" style="--d:.5s"/>
+            <circle class="fizz" cx="360" cy="405" r="7"  style="--d:.9s"/>
+            <circle class="fizz" cx="415" cy="385" r="10" style="--d:.4s"/>
+            <rect x="140" y="400" width="320" height="34" rx="14" fill="#1cc7c1"/>
+            <rect x="140" y="400" width="320" height="8" rx="4" fill="#ffd60a"/>
           </g>
 
           <g id="cotton" class="tool">
@@ -141,6 +160,14 @@
 
   <div class="overlay" id="overlay" hidden>
     <div class="modal" id="modal" role="dialog" aria-modal="true"></div>
+  </div>
+  <!-- R9: the rules, shown before the day begins. The text comes from the server. -->
+  <div class="overlay" id="rules">
+    <div class="modal rules" role="dialog" aria-modal="true" aria-labelledby="rules-title">
+      <h2 id="rules-title">Welcome to your first day at the salon!</h2>
+      <div id="rules-body"><p class="loading">Loading the rules…</p></div>
+      <button id="begin" type="button" disabled>Begin the day</button>
+    </div>
   </div>
   <div class="confetti" id="confetti" aria-hidden="true"></div>
 
