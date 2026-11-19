@@ -115,6 +115,13 @@ body {
 .view.polished .nail .gloss { opacity: .85; }
 .view.polished .nail .shine { opacity: 0; }
 .chips { fill: var(--nail-bare); }
+
+/* R10: cuticles are ragged until the Nip cuticles step, then a neat line. */
+.cuticle { fill: none; stroke-linecap: round; stroke-linejoin: round; transition: opacity .4s ease; }
+.cuticle.ragged { stroke: #c9707f; stroke-width: 2.5; }
+.cuticle.neat { stroke: #ffffff; stroke-width: 2.5; opacity: 0; }
+.view.nipped .cuticle.ragged { opacity: 0; }
+.view.nipped .cuticle.neat { opacity: .9; }
 .shine, .gloss { fill: #ffffff; }
 
 /* Tools are hidden until their step plays. */
@@ -220,6 +227,23 @@ body {
   90%  { opacity: 1; transform: translate(330px, 298px) rotate(-6deg); }
   100% { opacity: 0; transform: translate(330px, 400px) rotate(-8deg); }
 }
+
+/* Nip cuticles (R10): the nippers move along the base of each nail,
+   their blades snipping open and shut. */
+#nippers.play { animation: nip-cuticles 1.8s ease-in-out both; }
+@keyframes nip-cuticles {
+  0%   { opacity: 0; transform: translate(300px, 430px); }
+  12%  { opacity: 1; transform: translate(247px, 286px); }
+  32%  { transform: translate(283px, 290px); }
+  52%  { transform: translate(320px, 290px); }
+  72%  { transform: translate(357px, 288px); }
+  88%  { opacity: 1; transform: translate(375px, 290px); }
+  100% { opacity: 0; transform: translate(390px, 430px); }
+}
+#nippers.play .blade-l { animation: nipper-snip-l .3s ease-in-out .2s 5 both; }
+#nippers.play .blade-r { animation: nipper-snip-r .3s ease-in-out .2s 5 both; }
+@keyframes nipper-snip-l { 0%, 100% { transform: rotate(0); } 50% { transform: rotate(-14deg); } }
+@keyframes nipper-snip-r { 0%, 100% { transform: rotate(0); } 50% { transform: rotate(14deg); } }
 
 /* Buff: the rainbow buffer rubs in little circles along the nails. */
 #buffer.play { animation: buff-nails 1.8s ease-in-out both; }
@@ -346,6 +370,8 @@ body {
 .steps button:nth-child(4) { background: var(--pink); }
 .steps button:nth-child(5) { background: var(--orange); }
 .steps button:nth-child(6) { background: #e0115f; }
+.steps button:nth-child(7) { background: #2f9e44; }  /* round 4: menu has 8 steps */
+.steps button:nth-child(8) { background: #6a2bd9; }
 
 .taken { margin: 0 0 12px; padding-left: 24px; min-height: 1.5em; }
 .taken li { margin: 2px 0; }

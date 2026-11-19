@@ -2,7 +2,7 @@
 //
 // This file only draws and animates. Every rule (which steps are right, the
 // star, the earnings, what the nails look like) comes from the Python server
-// in web.py, which calls salon.py.
+// in web.py, which calls salon.py. R10 adds the nip-cuticles animation.
 
 "use strict";
 
@@ -18,6 +18,7 @@ const ANIMATIONS = {
   "wash-feet":      { tools: ["foot-bath"],                    ms: 2600, changeAt: 0, washing: true },
   "remove-product": { tools: ["cotton"],                       ms: 1800, changeAt: 0.5 },
   "file-nails":     { tools: ["file"],                         ms: 1800, changeAt: 0.5 },
+  "nip-cuticles":   { tools: ["nippers"],                      ms: 1800, changeAt: 0.5 },
   "buff-nails":     { tools: ["buffer"],                       ms: 1800, changeAt: 0.5 },
   "polish-nails":   { tools: ["bottle", "brush", "sparkles"],  ms: 2400, changeAt: 0.45, sparkleAt: 0.8 },
 };
@@ -103,10 +104,25 @@ function drawDigits(viewId, digits) {
                          rx: nw * 0.14, ry: 9 }),
       svgEl("ellipse", { class: "gloss", cx: nx + nw * 0.3, cy: nailTop + 12,
                          rx: nw * 0.12, ry: 7 }),
+      // R10: the cuticle at the nail's base, ragged until nipped, then neat.
+      svgEl("path", { class: "cuticle ragged", d: raggedEdge(nx, nw, nailTop) }),
+      svgEl("path", { class: "cuticle neat",
+                      d: `M${nx} ${nailTop + 1} Q${nx + nw / 2} ${nailTop - 5} ${nx + nw} ${nailTop + 1}` }),
     );
     g.append(nail);
     group.append(g);
   }
+}
+
+// A jagged line across the base of a nail: overgrown cuticle skin.
+function raggedEdge(nx, nw, y) {
+  const points = 6;
+  let d = `M${nx} ${y + 1}`;
+  for (let i = 1; i <= points; i++) {
+    const x = nx + (nw * i) / points;
+    d += ` L${x - nw / points / 2} ${y - 5 + (i % 2) * 2} L${x} ${y + 1}`;
+  }
+  return d;
 }
 
 // Apply the server's nail look for each area (R8: the nails change as you go).
@@ -117,6 +133,7 @@ function showNails(nails) {
     if (!look) continue;
     view.classList.toggle("has-product", look.has_product);
     view.classList.toggle("filed", look.filed);
+    view.classList.toggle("nipped", look.cuticles_nipped);
     view.classList.toggle("buffed", look.buffed);
     view.classList.toggle("polished", look.polish_color !== null);
     if (look.polish_hex) view.style.setProperty("--polish", look.polish_hex);
@@ -199,7 +216,7 @@ function renderClient(client, number, total) {
 
   // Fresh nails for the new client.
   for (const v of ["hand-view", "foot-view"]) {
-    $(v).classList.remove("has-product", "filed", "buffed", "polished");
+    $(v).classList.remove("has-product", "filed", "nipped", "buffed", "polished");
   }
   document.documentElement.style.setProperty("--polish", client.polish_hex);
   showNails(client.nails);
