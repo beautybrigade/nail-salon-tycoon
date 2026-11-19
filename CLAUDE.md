@@ -36,3 +36,8 @@ These rules apply to every session in this project.
    Each duration is written twice: `ms` in `app.js` and the `animation:`
    length in `style.css`. Change them together.
 8. **Every change applies to both versions.** New steps, rules, and requirements go into both the terminal game (`game.py`) and the browser game, unless the student says otherwise.
+9. **Every step button needs its own color rule.** The step buttons get their
+   colors from `.steps button:nth-child(N)` rules in `static/style.css`, one
+   per button. When a step is added, add a rule for the new last button, or it
+   shows up plain grey. (Polish was grey from round 3 until round 4 because of
+   this.)
