@@ -3,6 +3,9 @@
 // This file only draws and animates. Every rule (which steps are right, the
 // star, the earnings, what the nails look like) comes from the Python server
 // in web.py, which calls salon.py. R10 adds the nip-cuticles animation.
+// Round 5: when a step needs a choice (a color off the polish wall, R12, or
+// a shape when filing the hands, R13), the server says so and this page
+// only shows the question; the server decides when to ask and judges it.
 
 "use strict";
 
@@ -20,6 +23,7 @@ const ANIMATIONS = {
   "file-nails":     { tools: ["file"],                         ms: 1800, changeAt: 0.5 },
   "nip-cuticles":   { tools: ["nippers"],                      ms: 1800, changeAt: 0.5 },
   "buff-nails":     { tools: ["buffer"],                       ms: 1800, changeAt: 0.5 },
+  "pick-color":     { tools: ["polish-wall", "picked-bottle"], ms: 1200, changeAt: 0 },
   "polish-nails":   { tools: ["bottle", "brush", "sparkles"],  ms: 2400, changeAt: 0.45, sparkleAt: 0.8 },
 };
 
@@ -39,6 +43,23 @@ const FOOT_DIGITS = [
   { x: 319, w: 32, top: 232, tip: 302, toe: true },
   { x: 354, w: 40, top: 224, tip: 306, toe: true },       // big toe
 ];
+
+// R13: how to draw each nail shape. The nail runs from its base (top) to the
+// fingertip (tip); the free edge past the tip gets the shape.
+const SHAPE_PATHS = {
+  square: (x, top, w, tip) =>
+    `M${x} ${top + 3} Q${x + w / 2} ${top - 3} ${x + w} ${top + 3} L${x + w} ${tip + 6} ` +
+    `Q${x + w} ${tip + 8} ${x + w - 2} ${tip + 8} L${x + 2} ${tip + 8} Q${x} ${tip + 8} ${x} ${tip + 6} Z`,
+  round: (x, top, w, tip) =>
+    `M${x} ${top + 3} Q${x + w / 2} ${top - 3} ${x + w} ${top + 3} L${x + w} ${tip} ` +
+    `A${w / 2} 9 0 0 1 ${x} ${tip} Z`,
+  almond: (x, top, w, tip) =>
+    `M${x} ${top + 3} Q${x + w / 2} ${top - 3} ${x + w} ${top + 3} L${x + w} ${tip - 2} ` +
+    `Q${x + w} ${tip + 10} ${x + w / 2} ${tip + 14} Q${x} ${tip + 10} ${x} ${tip - 2} Z`,
+  stiletto: (x, top, w, tip) =>
+    `M${x} ${top + 3} Q${x + w / 2} ${top - 3} ${x + w} ${top + 3} L${x + w} ${tip - 4} ` +
+    `Q${x + w * 0.85} ${tip + 10} ${x + w / 2} ${tip + 22} Q${x + w * 0.15} ${tip + 10} ${x} ${tip - 4} Z`,
+};
 
 const state = {
   gameId: null,
@@ -98,6 +119,9 @@ function drawDigits(viewId, digits) {
                       height: (d.toe ? 30 : 36) + (d.toe ? 6 : 12), rx: 4 }),
       svgEl("rect", { class: "nail-base short", x: nx, y: nailTop, width: nw,
                       height: d.toe ? 28 : 34, rx: nw / 2 }),
+      // R13: one outline per filing shape; the look's shape picks which shows.
+      ...(d.toe ? [] : Object.entries(SHAPE_PATHS).map(([shape, path]) =>
+        svgEl("path", { class: `nail-base shaped shape-${shape}`, d: path(nx, nailTop, nw, d.tip) }))),
       svgEl("circle", { class: "chips", cx: nx + nw * 0.3, cy: nailTop + 22, r: 3.5 }),
       svgEl("circle", { class: "chips", cx: nx + nw * 0.7, cy: nailTop + 10, r: 2.5 }),
       svgEl("ellipse", { class: "shine", cx: nx + nw * 0.32, cy: nailTop + 14,
@@ -136,8 +160,30 @@ function showNails(nails) {
     view.classList.toggle("nipped", look.cuticles_nipped);
     view.classList.toggle("buffed", look.buffed);
     view.classList.toggle("polished", look.polish_color !== null);
+    clearShape(view);
+    if (look.shape) view.classList.add("shaped", `shape-${look.shape}`); // R13
     if (look.polish_hex) view.style.setProperty("--polish", look.polish_hex);
   }
+}
+
+function clearShape(view) {
+  for (const c of [...view.classList]) {
+    if (c === "shaped" || c.startsWith("shape-")) view.classList.remove(c);
+  }
+}
+
+// R12: put the server's colors on the polish wall's shelves (4 per shelf).
+function fillWall(options) {
+  const shelf = document.querySelector("#polish-wall .wall-bottles");
+  shelf.innerHTML = "";
+  options.forEach((o, i) => {
+    const x = 44 + (i % 4) * 44;
+    const y = i < 4 ? 58 : 128;
+    shelf.append(
+      svgEl("rect", { x: x + 6, y: y - 12, width: 12, height: 14, rx: 3, fill: "#222034" }),
+      svgEl("rect", { x, y, width: 24, height: 38, rx: 7, fill: o.hex, stroke: "#fff", "stroke-width": 2 }),
+    );
+  });
 }
 
 function showArea(area) {
@@ -166,7 +212,8 @@ function restart(el) {
 async function playStep(reply) {
   const anim = ANIMATIONS[reply.animation];
   if (reply.health_answer) $("speech").textContent = `“${reply.health_answer}”`;
-  document.documentElement.style.setProperty("--polish", state.client.polish_hex);
+  // R12: the bottle and brush hold the color the player picked (from the server).
+  document.documentElement.style.setProperty("--polish", reply.brush_hex);
 
   const tools = anim.tools.filter((t) => t !== "sparkles").map($);
   tools.forEach(restart);
@@ -196,12 +243,14 @@ function renderClient(client, number, total) {
     ? "Has old polish on"
     : "Has bare nails";
   const order = client.areas.length > 1 ? "<li>Do the hands first, then the feet</li>" : "";
+  const shape = client.nail_shape ? '<li>Wants <strong class="shape"></strong> nails</li>' : "";
   $("client-card").innerHTML = `
     <span class="time"></span><span class="kind"></span>
     <p class="service"><span class="name"></span> <span class="price"></span></p>
     <ul>
       <li>${nailsNote}</li>
       <li>Wants <span class="swatch"></span><strong class="color"></strong></li>
+      ${shape}
       ${order}
     </ul>`;
   const card = $("client-card");
@@ -213,10 +262,12 @@ function renderClient(client, number, total) {
   card.querySelector(".price").textContent = `$${client.price}`;
   card.querySelector(".swatch").style.background = client.polish_hex;
   card.querySelector(".color").textContent = client.polish_color;
+  if (client.nail_shape) card.querySelector(".shape").textContent = client.nail_shape;
 
   // Fresh nails for the new client.
   for (const v of ["hand-view", "foot-view"]) {
     $(v).classList.remove("has-product", "filed", "nipped", "buffed", "polished");
+    clearShape($(v)); // R13
   }
   document.documentElement.style.setProperty("--polish", client.polish_hex);
   showNails(client.nails);
@@ -267,7 +318,13 @@ async function takeStep(stepId) {
   if (state.busy) return;
   setBusy(true);
   try {
-    const reply = await api("/api/step", { game_id: state.gameId, step: stepId });
+    let reply = await api("/api/step", { game_id: state.gameId, step: stepId });
+    if (reply.choose) { // round 5: the server wants a color or a shape first
+      const choice = await askChoice(reply.choose);
+      if (choice === null) return; // cancelled: no step taken
+      if (reply.choose.kind === "color") fillWall(reply.choose.options);
+      reply = await api("/api/step", { game_id: state.gameId, step: stepId, choice });
+    }
     state.steps = reply.steps_taken;
     renderTaken();
     await playStep(reply);
@@ -290,6 +347,47 @@ async function finishService() {
     showError(err);
     setBusy(false);
   }
+}
+
+// Round 5: show the server's question (polish wall or filing shapes) and
+// resolve with the chosen option's id, or null if the player cancels.
+function askChoice(choose) {
+  return new Promise((resolve) => {
+    const modal = openModal(`
+      <h2></h2>
+      <div class="choices ${choose.kind}"></div>
+      <button type="button" class="cancel">Cancel</button>`);
+    modal.querySelector("h2").textContent = choose.question;
+    const box = modal.querySelector(".choices");
+    for (const o of choose.options) {
+      const b = document.createElement("button");
+      b.type = "button";
+      if (choose.kind === "color") {
+        const bottle = document.createElement("span");
+        bottle.className = "mini-bottle";
+        bottle.style.background = o.hex;
+        b.append(bottle);
+      } else {
+        b.append(shapeIcon(o.id));
+      }
+      const label = document.createElement("span");
+      label.textContent = o.label;
+      b.append(label);
+      b.addEventListener("click", () => { closeModal(); resolve(o.id); });
+      box.append(b);
+    }
+    modal.querySelector(".cancel").addEventListener("click", () => { closeModal(); resolve(null); });
+    box.querySelector("button").focus();
+  });
+}
+
+function shapeIcon(shape) {
+  const svg = svgEl("svg", { viewBox: "0 0 40 64", class: "shape-icon", "aria-hidden": "true" });
+  svg.append(svgEl("rect", { x: 6, y: 6, width: 28, height: 50, rx: 14, class: "icon-finger" }));
+  if (SHAPE_PATHS[shape]) {
+    svg.append(svgEl("path", { d: SHAPE_PATHS[shape](11, 10, 18, 40), class: "icon-nail" }));
+  }
+  return svg;
 }
 
 function openModal(html) {

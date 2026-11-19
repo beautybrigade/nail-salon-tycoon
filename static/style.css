@@ -108,6 +108,13 @@ body {
 .nail .short { opacity: 0; }
 .view.filed .nail .long { opacity: 0; }
 .view.filed .nail .short { opacity: 1; }
+/* R13: after filing the hands, the nails show the shape the player chose. */
+.nail .shaped { opacity: 0; }
+.view.shaped .nail .long, .view.shaped .nail .short { opacity: 0; }
+.view.shape-square .nail .shape-square,
+.view.shape-round .nail .shape-round,
+.view.shape-almond .nail .shape-almond,
+.view.shape-stiletto .nail .shape-stiletto { opacity: 1; }
 
 .nail .chips, .nail .shine, .nail .gloss { opacity: 0; transition: opacity .5s ease; }
 .view.has-product:not(.polished) .nail .chips { opacity: 1; }
@@ -261,6 +268,23 @@ body {
   100% { opacity: 0; transform: translate(420px, 380px) rotate(0); }
 }
 
+/* Pick polish color (R12): the polish wall appears and the picked bottle
+   lifts off its shelf and comes down to the table. */
+#polish-wall.play { animation: polish-wall-show 1.2s ease both; }
+@keyframes polish-wall-show {
+  0%   { opacity: 0; transform: translateY(-20px); }
+  15%, 80% { opacity: 1; transform: translateY(0); }
+  100% { opacity: 0; transform: translateY(-20px); }
+}
+#picked-bottle.play { animation: pick-color 1.2s ease-in-out both; }
+@keyframes pick-color {
+  0%   { opacity: 0; transform: translate(124px, 112px) scale(.8); }
+  15%  { opacity: 1; transform: translate(124px, 112px) scale(1); }
+  40%  { transform: translate(124px, 80px) scale(1.15) rotate(-8deg); }
+  85%  { opacity: 1; transform: translate(510px, 330px) scale(1.25) rotate(0); }
+  100% { opacity: 0; transform: translate(510px, 340px) scale(1.25); }
+}
+
 /* Polish: the bottle appears, the brush sweeps color on, then sparkles. */
 #bottle.play { animation: polish-bottle 2.4s ease both; }
 @keyframes polish-bottle {
@@ -372,6 +396,7 @@ body {
 .steps button:nth-child(6) { background: #e0115f; }
 .steps button:nth-child(7) { background: #2f9e44; }  /* round 4: menu has 8 steps */
 .steps button:nth-child(8) { background: #6a2bd9; }
+.steps button:nth-child(9) { background: #d6336c; }  /* round 5: menu has 9 steps */
 
 .taken { margin: 0 0 12px; padding-left: 24px; min-height: 1.5em; }
 .taken li { margin: 2px 0; }
@@ -424,6 +449,28 @@ body {
 .modal th, .modal td { padding: 6px 4px; border-bottom: 2px solid #ffe3f1; }
 .modal .total { font-size: 1.4rem; font-weight: bold; }
 .modal button { background: var(--purple); margin-top: 8px; font-size: 1.05rem; }
+
+/* Round 5: choosing a polish color (R12) or a filing shape (R13). */
+.choices { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 12px 0; }
+.modal .choices button {
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  background: #fff; color: var(--ink); border: 3px solid #ffe3f1;
+  margin: 0; padding: 10px 4px; font-size: .9rem;
+}
+.modal .choices button:hover, .modal .choices button:focus-visible { border-color: var(--pink); }
+.mini-bottle {
+  position: relative; width: 26px; height: 34px; margin-top: 12px;
+  border-radius: 8px; border: 2px solid #fff; box-shadow: 0 0 0 2px #0002;
+}
+.mini-bottle::before {
+  content: ""; position: absolute; left: 6px; top: -14px;
+  width: 10px; height: 12px; border-radius: 3px; background: #222034;
+}
+.shape-icon { width: 34px; height: 54px; }
+.icon-finger { fill: var(--skin); stroke: var(--skin-line); stroke-width: 2; }
+.icon-nail { fill: var(--pink); stroke: #00000022; }
+.modal .cancel { background: #8a7f99; }
+@media (max-width: 420px) { .choices { grid-template-columns: repeat(2, 1fr); } }
 
 .confetti { position: fixed; inset: 0; pointer-events: none; overflow: hidden; z-index: 20; }
 .confetti i {
