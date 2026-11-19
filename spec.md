@@ -1,11 +1,13 @@
-# Nail Salon Tycoon — Spec (rounds 1 to 4)
+# Nail Salon Tycoon — Spec (rounds 1 to 5)
 
 A game in which the player is a first-time nail technician working one day in a
 salon. Round 1 made it a terminal game (R1–R6). Round 2 adds an animated
 browser version (R7, R8); the rules of the day stay the same. Round 3 adds a
 rules screen before the day begins (R9) and a foot-washing step for pedicures
 (R3 changed). Round 4 adds a cuticle-nipping step (R10) that is skipped for
-clients with diabetes (R11). Decisions marked
+clients with diabetes (R11). Round 5 makes the player pick the client's polish
+color off a polish wall (R12) and file the hands into the client's chosen nail
+shape (R13). Decisions marked
 **(student)** were answered by the student; the rest were chosen by the
 assistant and may be revisited.
 
@@ -40,7 +42,8 @@ For the combo, the hands are always done first, then the feet.
 ## Steps the player can take (R2, R3, R4) **(student: one step at a time)**
 
 (Round 3 added step 3, **Wash feet in foot bath**; round 4 added step 6,
-**Nip cuticles**; see "Round 3" and "Round 4" below.)
+**Nip cuticles**; round 5 added step 8, **Pick polish color**, and a shape
+choice when filing the hands; see "Round 3", "Round 4", and "Round 5" below.)
 
 For each client, the player picks steps one at a time from a numbered menu:
 
@@ -51,8 +54,12 @@ For each client, the player picks steps one at a time from a numbered menu:
 5. File
 6. Nip cuticles
 7. Buff
-8. Polish
-9. Finish service
+8. Pick polish color (round 5: the player then picks one color from the wall)
+9. Polish
+10. Finish service
+
+(Round 5) **File** on the hands also asks the player which shape to file:
+square, round, stiletto, or almond. File on the feet asks nothing.
 
 The player can pick any step in any order. The game does not stop them; it
 judges the whole sequence when they choose **Finish service**.
@@ -72,14 +79,24 @@ For each client the one correct sequence is:
    - **File**, then **Nip cuticles** (R10, round 4), then **Buff**, then
      **Polish** (R4). **Nip cuticles** is left out when the client has
      diabetes (R11, round 4).
+   - (Round 5) On the hands, **File** must use the client's chosen shape
+     (R13). On the feet, File has no shape.
+   - (Round 5) **Pick polish color**, with the client's color, comes right
+     after Buff and right before Polish (R12). In a combo it is picked only
+     once, before the hands' Polish; the feet reuse the same bottle.
 
-Examples:
+Examples (round 5; "file (almond)" means File with the almond shape, and
+"pick (Grape)" means Pick polish color with Grape):
 
-- Manicure, no product: health, wash hands, file, nip, buff, polish
-- Pedicure, with product: health, wash feet, remove, file, nip, buff, polish
-- Combo, with product: health, wash hands, remove, file, nip, buff, polish,
-  wash feet, remove, file, nip, buff, polish
-- Manicure, client has diabetes: health, wash hands, file, buff, polish
+- Manicure, no product, almond, Grape: health, wash hands, file (almond),
+  nip, buff, pick (Grape), polish
+- Pedicure, with product, Grape: health, wash feet, remove, file, nip, buff,
+  pick (Grape), polish
+- Combo, with product, square, Grape: health, wash hands, remove,
+  file (square), nip, buff, pick (Grape), polish, wash feet, remove, file,
+  nip, buff, polish
+- Manicure, client has diabetes, round, Grape: health, wash hands,
+  file (round), buff, pick (Grape), polish
 
 (For a combo, "has product" and "has diabetes" apply to both hands and feet.)
 
@@ -108,6 +125,10 @@ correct sequence. That includes:
 - skipping cuticle nipping for a client without diabetes, or nipping anywhere
   other than right after filing and right before buffing (round 4);
 - nipping the cuticles of a client with diabetes (round 4);
+- not picking the polish color, picking it anywhere other than right after
+  Buff and right before Polish, picking the wrong color, or picking it a
+  second time in a combo (round 5, R12);
+- filing the hands in a shape other than the client's (round 5, R13);
 - repeating a step that should only happen once.
 
 ## Star and earnings (R5)
@@ -182,8 +203,10 @@ steps taken so far:
 - **cuticles nipped** (round 4): every nail starts with a ragged cuticle edge
   at its base; after **Nip cuticles** the edge is a clean, neat line;
 - **buffed**: after **Buff**, the nails have a soft shine;
-- **polished**: after **Polish**, the nails are the client's requested color
-  with a glossy shine.
+- **polished**: after **Polish**, the nails are the color the player picked
+  off the wall (round 5, R12) with a glossy shine;
+- **shape** (round 5, R13): after **File** on the hands, the nails have the
+  shape the player chose.
 
 Steps change the area being worked on (hands, then feet after the first
 Polish in a combo). Wrong steps still animate and change the nails; for
@@ -197,8 +220,9 @@ example, polishing before filing still paints the nails.
   fixed palette of bright colors (for example Cherry Red, Hot Pink, Sunny
   Yellow, Electric Blue). The color comes from the same seeded `random.Random`,
   so a seed gives the same colors.
-- The requested color is what the Polish step paints. Color choice is not
-  judged.
+- Until round 4, the requested color was what the Polish step painted and
+  color was not judged. From round 5, the player picks the color and it is
+  judged (R12, see "Round 5" below).
 - The salon itself is colorful: bright background, colored tools and bottles,
   confetti when the client gives a star.
 
@@ -273,6 +297,64 @@ example, polishing before filing still paints the nails.
   and changes the nails, and is judged only at **Finish**.
 - Adding the step adds no new random draw, so a given `--seed` gives the same
   clients as in round 3.
+
+## Round 5: picking the polish color (R12)
+
+- When a client arrives, the game shows the color they want (the terminal now
+  prints it too). The color is the client's existing random color from
+  round 2, so this adds no new random draw.
+- **Pick polish color** is a new step, judged like every other step. It must
+  come right after **Buff** and right before **Polish** (R12). The player
+  chooses a color from the polish wall: all 8 colors in `POLISH_COLORS`.
+  **(student: a new step)**
+- A wrong color is a mistake: no star, $0. Missing the pick, picking at the
+  wrong time, or picking twice is also a mistake.
+- **Combo:** the color is picked **once**, before the hands' Polish. The feet
+  are polished with the same bottle, so picking again before the feet's
+  Polish is an extra step. **(student)**
+- **Polish paints the picked color** (the most recent pick), even when it is
+  the wrong one. **(student: show what the player picked)** If the player
+  polishes without having picked a color, the brush uses the client's
+  requested color (judged as a mistake at Finish anyway).
+- Terminal: after choosing the step, the player types the number of a color
+  from a numbered list, and the game prints "You take the <color> bottle off
+  the polish wall."
+- Browser: the step opens a polish wall of 8 colored bottles to click. Its
+  animation, `pick-color` (1.2 s), lifts a bottle of the picked color off
+  a shelf and sets it on the table. It does not change the nails.
+
+## Round 5: filing the nail shape (R13)
+
+- Every manicure and combo client chooses a nail shape when they arrive,
+  picked at random from **square, round, stiletto, almond**. Pedicure clients
+  have no shape. The shape is shown with the service when the client arrives.
+- **File asks for the shape on the hands.** **(student: the File step asks)**
+  When the player picks File while working on the hands, the game asks which
+  shape. The shape must match the client's: a wrong shape is a mistake (no
+  star, $0). There is no separate "shape" step, so "shaping right before
+  filing" is part of the File step itself.
+- File on the feet (a pedicure, or the feet of a combo) asks nothing,
+  exactly as before.
+- **The nails show the shape the player filed** (right or wrong).
+  **(student)** Before filing, the nails keep their natural look. After a
+  plain File on the feet, the toenails get the short, smooth tip from round 2.
+- Terminal: after choosing File on the hands, the player types the number of
+  a shape, and the game prints "You file the nails into a <shape> shape."
+- Browser: File on the hands first opens a shape picker with the 4 shapes.
+  The file animation (unchanged) plays, and halfway through the nails take
+  on the chosen shape.
+- The server decides when File needs a shape and when Pick polish color
+  needs a color (`salon.choices_for()`); the page and `game.py` only ask the
+  question they are told to ask.
+
+## Round 5 notes
+
+- The shape is a new random draw, made after the color and only for clients
+  with a hand service. So a given `--seed` gives different days than in
+  round 4.
+- The rules screen (R9) adds the color pick and the shape. As before, the
+  text is built in `salon.rules()`.
+- Menu numbers: Pick polish color is step 8, so Polish is 9 and Finish is 10.
 
 ## Running
 
