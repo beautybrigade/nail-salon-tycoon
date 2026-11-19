@@ -35,6 +35,9 @@ POLISH_COLORS = {
     "Grape": "#8e44ec",
 }
 
+# R13: nail shapes a manicure or combo client can ask for (hands only)
+NAIL_SHAPES = ("square", "round", "stiletto", "almond")
+
 APPOINTMENT = "appointment"
 WALK_IN = "walk-in"
 
@@ -51,7 +54,33 @@ class Step(Enum):
     FILE = "File"
     NIP_CUTICLES = "Nip cuticles"  # R10, round 4
     BUFF = "Buff"
+    PICK_COLOR = "Pick polish color"  # R12, round 5
     POLISH = "Polish"
+
+
+@dataclass(frozen=True)
+class Pick:
+    """A step taken together with a choice (round 5): the color picked off the
+    polish wall (R12), or the shape the hands are filed into (R13)."""
+
+    step: Step
+    choice: str
+
+
+# Everything the player does is a Move: a plain Step, or a Step with a choice.
+Move = Step | Pick
+
+
+def step_of(move: Move) -> Step:
+    """The Step behind a move, with any choice left off."""
+    return move.step if isinstance(move, Pick) else move
+
+
+def move_label(move: Move) -> str:
+    """How a move is shown to the player, e.g. "File (almond)"."""
+    if isinstance(move, Pick):
+        return f"{move.step.value} ({move.choice})"
+    return move.value
 
 
 HANDS = "hands"
@@ -85,6 +114,7 @@ class Client:
     has_product: bool
     health_condition: str | None  # None means no conditions
     polish_color: str = "Cherry Red"  # R8: a name from POLISH_COLORS
+    nail_shape: str | None = None  # R13: from NAIL_SHAPES; None for a pedicure
 
 
 def _random_client(rng: random.Random, hour: int, kind: str) -> Client:
@@ -96,7 +126,8 @@ def _random_client(rng: random.Random, hour: int, kind: str) -> Client:
         else None
     )
     color = rng.choice(list(POLISH_COLORS))
-    return Client(hour, kind, service, has_product, condition, color)
+    shape = rng.choice(NAIL_SHAPES) if service.is_hand_service else None  # R13
+    return Client(hour, kind, service, has_product, condition, color, shape)
 
 
 def free_hours() -> list[int]:
@@ -128,22 +159,40 @@ def health_answer(client: Client) -> str:
     return f"Yes: {client.health_condition}."
 
 
-def required_steps(client: Client) -> list[Step]:
+def required_steps(client: Client) -> list[Move]:
     """R2, R3, R4: the one correct sequence of steps for this client.
 
     Each area is washed just before it is worked on: hands with WASH_HANDS,
     feet with WASH_FEET (R3 as changed in round 3). Each area's cuticles are
     nipped after filing and before buffing (R10), except for a client with
-    diabetes (R11).
+    diabetes (R11). The hands are filed into the client's shape (R13). The
+    client's color is picked right before the first Polish only (R12); in a
+    combo the feet reuse the same bottle.
     """
     nip = [] if client.health_condition == DIABETES else [Step.NIP_CUTICLES]
-    steps = [Step.ASK_HEALTH]
-    for area in client.service.areas:
+    steps: list[Move] = [Step.ASK_HEALTH]
+    for i, area in enumerate(client.service.areas):
         steps.append(Step.WASH_HANDS if area == HANDS else Step.WASH_FEET)
         if client.has_product:
             steps.append(Step.REMOVE_PRODUCT)
-        steps += [Step.FILE, *nip, Step.BUFF, Step.POLISH]
+        file = Pick(Step.FILE, client.nail_shape) if area == HANDS else Step.FILE
+        pick = [Pick(Step.PICK_COLOR, client.polish_color)] if i == 0 else []
+        steps += [file, *nip, Step.BUFF, *pick, Step.POLISH]
     return steps
+
+
+def choices_for(client: Client, steps_taken: list[Move], step: Step) -> tuple[str, ...]:
+    """Round 5: what the player must choose from when taking this step now.
+
+    Picking a color offers the whole polish wall (R12). Filing the hands
+    offers the nail shapes (R13). Every other step, including filing the
+    feet, asks for nothing, so this returns ().
+    """
+    if step is Step.PICK_COLOR:
+        return tuple(POLISH_COLORS)
+    if step is Step.FILE and working_area(client, steps_taken) == HANDS:
+        return NAIL_SHAPES
+    return ()
 
 
 @dataclass(frozen=True)
@@ -154,7 +203,7 @@ class ServiceResult:
     earned: int
 
 
-def finish_service(client: Client, steps_taken: list[Step]) -> ServiceResult:
+def finish_service(client: Client, steps_taken: list[Move]) -> ServiceResult:
     """R5: judge the player's steps. A star (and the full price) only if exact."""
     satisfied = list(steps_taken) == required_steps(client)
     stars = 1 if satisfied else 0
@@ -173,45 +222,58 @@ class NailLook:
     buffed: bool
     polish_color: str | None   # None until polished
     cuticles_nipped: bool = False  # R10: ragged cuticles until nipped
+    shape: str | None = None       # R13: the shape the player filed, if any
 
 
-def _area_index(client: Client, steps_taken: list[Step]) -> int:
+def _area_index(client: Client, steps_taken: list[Move]) -> int:
     """Which area the next step works on. Each Polish finishes an area."""
-    polishes = sum(1 for s in steps_taken if s is Step.POLISH)
+    polishes = sum(1 for s in steps_taken if step_of(s) is Step.POLISH)
     return min(polishes, len(client.service.areas) - 1)
 
 
-def working_area(client: Client, steps_taken: list[Step]) -> str:
+def working_area(client: Client, steps_taken: list[Move]) -> str:
     """R8: the area shown now: hands, or feet after the first Polish in a combo."""
     return client.service.areas[_area_index(client, steps_taken)]
 
 
-def nail_looks(client: Client, steps_taken: list[Step]) -> dict[str, NailLook]:
+def brush_color(client: Client, steps_taken: list[Move]) -> str:
+    """R12: the color Polish paints now: the latest color the player picked
+    off the wall, right or wrong, or the client's own color if none yet."""
+    for move in reversed(steps_taken):
+        if isinstance(move, Pick) and move.step is Step.PICK_COLOR:
+            return move.choice
+    return client.polish_color
+
+
+def nail_looks(client: Client, steps_taken: list[Move]) -> dict[str, NailLook]:
     """R8: replay the player's steps and return each area's nail look.
 
     This shows what the player did, right or wrong; judging happens only in
-    finish_service. Asking about health and washing do not change nails.
+    finish_service. Asking about health, washing, and picking a color do not
+    change nails.
     """
     looks = {
         area: NailLook(client.has_product, False, False, None)
         for area in client.service.areas
     }
-    done: list[Step] = []
-    for step in steps_taken:
+    done: list[Move] = []
+    for move in steps_taken:
+        step = step_of(move)
         area = working_area(client, done)
         look = looks[area]
         if step is Step.REMOVE_PRODUCT:
             look = replace(look, has_product=False)
         elif step is Step.FILE:
-            look = replace(look, filed=True)
+            shape = move.choice if isinstance(move, Pick) else None  # R13
+            look = replace(look, filed=True, shape=shape)
         elif step is Step.NIP_CUTICLES:
             look = replace(look, cuticles_nipped=True)
         elif step is Step.BUFF:
             look = replace(look, buffed=True)
         elif step is Step.POLISH:
-            look = replace(look, polish_color=client.polish_color)
+            look = replace(look, polish_color=brush_color(client, done))  # R12
         looks[area] = look
-        done.append(step)
+        done.append(move)
     return looks
 
 
@@ -252,8 +314,15 @@ def rules() -> list[RuleSection]:
             f"   b. {Step.REMOVE_PRODUCT.value}, only if the client has old "
             "polish on.",
             f"   c. {Step.FILE.value}, then {Step.NIP_CUTICLES.value}, then "
-            f"{Step.BUFF.value}, then {Step.POLISH.value}. Never nip the "
-            f"cuticles of a client with {DIABETES}.",
+            f"{Step.BUFF.value}, then {Step.PICK_COLOR.value}, then "
+            f"{Step.POLISH.value}. Never nip the cuticles of a client with "
+            f"{DIABETES}.",
+            f"   d. When you file the hands, file them into the shape the "
+            f"client wants ({', '.join(NAIL_SHAPES[:-1])}, or "
+            f"{NAIL_SHAPES[-1]}).",
+            f"   e. {Step.PICK_COLOR.value}: take the client's color off the "
+            "polish wall. In a combo, pick it once, before polishing the hands; "
+            "the feet use the same bottle.",
             "3. Finish service.",
         )),
         RuleSection("Stars and pay", (
@@ -292,7 +361,7 @@ class Game:
     def __init__(self, rng: random.Random):
         self.clients = generate_day(rng)
         self.index = 0
-        self.steps: list[Step] = []
+        self.steps: list[Move] = []
         self.results: list[ServiceResult] = []
 
     @property
@@ -308,9 +377,22 @@ class Game:
             raise ValueError("the day is over")
         return self.clients[self.index]
 
-    def take_step(self, step: Step) -> None:
-        self._require_client()
-        self.steps.append(step)
+    def choices_for(self, step: Step) -> tuple[str, ...]:
+        """Round 5: what the player must choose from to take this step now."""
+        return choices_for(self._require_client(), self.steps, step)
+
+    def take_step(self, step: Move, choice: str | None = None) -> None:
+        """Record a step. A step that needs a choice right now (a color for
+        Pick polish color, a shape for filing the hands) must be given one of
+        the offered options; any other step must not be given a choice."""
+        if isinstance(step, Pick):
+            step, choice = step.step, step.choice
+        options = self.choices_for(step)
+        if options and choice not in options:
+            raise ValueError(f"{step.value}: choose one of {', '.join(options)}")
+        if not options and choice is not None:
+            raise ValueError(f"{step.value} takes no choice right now")
+        self.steps.append(Pick(step, choice) if options else step)
 
     def finish(self) -> ServiceResult:
         """R5: judge the current client and move on to the next one."""
