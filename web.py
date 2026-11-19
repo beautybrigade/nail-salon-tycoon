@@ -8,7 +8,10 @@ every game rule stays in salon.py. The page and this server talk in JSON:
 
     GET  /api/rules                               -> the rules (R9)
     POST /api/new-game  {}                        -> first client, step menu
-    POST /api/step      {"game_id", "step"}       -> animation, nail looks
+    POST /api/step      {"game_id", "step", "choice"?}
+                         -> animation, nail looks; or, when the step needs a
+                            color or shape and none was sent, the options
+                            to choose from (round 5)
     POST /api/finish    {"game_id"}               -> star, next client or day
 """
 
@@ -44,6 +47,7 @@ STEP_ANIMATIONS = {
     salon.Step.FILE: "file-nails",
     salon.Step.NIP_CUTICLES: "nip-cuticles",  # R10, round 4
     salon.Step.BUFF: "buff-nails",
+    salon.Step.PICK_COLOR: "pick-color",  # R12, round 5
     salon.Step.POLISH: "polish-nails",
 }
 
@@ -62,10 +66,11 @@ def look_json(look: salon.NailLook) -> dict:
         "cuticles_nipped": look.cuticles_nipped,  # R10
         "polish_color": look.polish_color,
         "polish_hex": salon.POLISH_COLORS.get(look.polish_color),
+        "shape": look.shape,  # R13
     }
 
 
-def nails_json(client: salon.Client, steps: list[salon.Step]) -> dict:
+def nails_json(client: salon.Client, steps: list[salon.Move]) -> dict:
     return {area: look_json(look)
             for area, look in salon.nail_looks(client, steps).items()}
 
@@ -83,8 +88,27 @@ def client_json(client: salon.Client | None) -> dict | None:
         "has_product": client.has_product,
         "polish_color": client.polish_color,
         "polish_hex": salon.POLISH_COLORS[client.polish_color],
+        "nail_shape": client.nail_shape,  # R13: None for a pedicure
         "working_area": salon.working_area(client, []),
         "nails": nails_json(client, []),
+    }
+
+
+def choose_json(step: salon.Step, options: tuple[str, ...]) -> dict:
+    """Round 5: the question the page asks before a step that needs a choice."""
+    if step is salon.Step.PICK_COLOR:
+        return {
+            "step": step.name,
+            "kind": "color",
+            "question": "Pick the client's color off the polish wall",
+            "options": [{"id": o, "label": o, "hex": salon.POLISH_COLORS[o]}
+                        for o in options],
+        }
+    return {
+        "step": step.name,
+        "kind": "shape",
+        "question": "Which shape do you file?",
+        "options": [{"id": o, "label": o.capitalize()} for o in options],
     }
 
 
@@ -201,7 +225,11 @@ class SalonHandler(BaseHTTPRequestHandler):
             step = salon.Step[str(body.get("step"))]
         except KeyError:
             raise BadRequest(f"unknown step: {body.get('step')}") from None
-        game.take_step(step)  # ValueError if the day is over
+        choice = body.get("choice")
+        options = game.choices_for(step)  # ValueError if the day is over
+        if options and choice is None:  # round 5: ask first, take the step later
+            return {"choose": choose_json(step, options)}
+        game.take_step(step, None if choice is None else str(choice))
         client = game.current_client
         reply = {
             "step": step.name,
@@ -209,7 +237,9 @@ class SalonHandler(BaseHTTPRequestHandler):
             "animation": STEP_ANIMATIONS[step],
             "working_area": salon.working_area(client, game.steps),
             "nails": nails_json(client, game.steps),
-            "steps_taken": [s.value for s in game.steps],
+            "steps_taken": [salon.move_label(s) for s in game.steps],
+            # R12: the color in the bottle and brush now (the latest pick)
+            "brush_hex": salon.POLISH_COLORS[salon.brush_color(client, game.steps)],
         }
         if step is salon.Step.ASK_HEALTH:
             reply["health_answer"] = salon.health_answer(client)
@@ -225,7 +255,7 @@ class SalonHandler(BaseHTTPRequestHandler):
                 "stars": result.stars,
                 "earned": result.earned,
             },
-            "correct_steps": [s.value for s in salon.required_steps(client)],
+            "correct_steps": [salon.move_label(s) for s in salon.required_steps(client)],
             "total_so_far": sum(r.earned for r in game.results),
             "client_number": game.index + 1,
             "next_client": client_json(game.current_client),

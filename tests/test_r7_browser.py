@@ -143,9 +143,12 @@ def test_r7_full_day_played_over_the_browser_interface(server):
     _, data = post(server + "/api/new-game", {})
     game_id = data["game_id"]
     for i, client in enumerate(clients):
-        for step in salon.required_steps(client):
-            status, _ = post(server + "/api/step", {"game_id": game_id, "step": step.name})
-            assert status == 200
+        for move in salon.required_steps(client):
+            body = {"game_id": game_id, "step": salon.step_of(move).name}
+            if isinstance(move, salon.Pick):  # round 5: a color or shape (R12, R13)
+                body["choice"] = move.choice
+            status, reply = post(server + "/api/step", body)
+            assert status == 200 and "choose" not in reply
         _, done = post(server + "/api/finish", {"game_id": game_id})
         assert done["result"]["stars"] == 1
         assert done["result"]["earned"] == client.service.price
@@ -165,7 +168,8 @@ def test_r7_wrong_steps_earn_nothing_and_show_the_correct_steps(server):
     _, done = post(server + "/api/finish", {"game_id": data["game_id"]})
     first = salon.generate_day(random.Random(SEED))[0]
     assert done["result"] == {"satisfied": False, "stars": 0, "earned": 0}
-    assert done["correct_steps"] == [s.value for s in salon.required_steps(first)]
+    assert done["correct_steps"] == [salon.move_label(s)  # round 5: with choices
+                                     for s in salon.required_steps(first)]
 
 
 def test_r7_health_question_gets_the_clients_answer(server):
@@ -178,6 +182,9 @@ def test_r7_health_question_gets_the_clients_answer(server):
 def test_r7_step_reply_includes_animation_and_nails(server):
     _, data = post(server + "/api/new-game", {})
     _, reply = post(server + "/api/step", {"game_id": data["game_id"], "step": "FILE"})
+    if "choose" in reply:  # round 5: filing the hands asks for a shape (R13)
+        _, reply = post(server + "/api/step", {"game_id": data["game_id"], "step": "FILE",
+                                               "choice": salon.NAIL_SHAPES[0]})
     assert reply["animation"] == web.STEP_ANIMATIONS[salon.Step.FILE]
     area = reply["working_area"]
     assert reply["nails"][area]["filed"] is True
