@@ -19,3 +19,8 @@ Working in a salon setting can be nerve-wracking, especially for a first time na
 # Round 3 requirements
 - R9: The game must display the rules at the beginning before choosing to begin.
 - R3 changes: When the client selects the pedicure service, the game must show a washing animation similar to the handwashing, but for pedicures.
+
+# Round 4 requirements
+
+- R10: The game must include a new part of the service which includes nipping the cuticles. It must come after filing the nails, and right before buffing.
+- R11: If the client responds with a diabetic medical condition, nipping cuticles must be excluded from the service requirements.
