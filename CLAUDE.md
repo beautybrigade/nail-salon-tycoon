@@ -13,7 +13,9 @@ These rules apply to every session in this project.
    tests can use a seed. The browser version follows the same split:
    `web.py` only serves pages and turns `salon.py` results into JSON, and the
    files in `static/` only draw and animate. No game rule (which steps are
-   right, stars, earnings, nail looks) may be written in JavaScript.
+   right, stars, earnings, nail looks, the rules text) may be written in
+   JavaScript. The rules screen shows the text from `salon.rules()`, served
+   by `GET /api/rules`; don't write rules in `index.html` or `game.py`.
 3. **Every test names its requirement.** Each test's name or docstring names
    the requirement ID it checks (for example `R4`). A test must fail if the
    code it checks is wrong.
@@ -25,3 +27,12 @@ These rules apply to every session in this project.
 5. **Never undo or amend a commit.** No `git commit --amend`, `git reset`,
    `git revert` of the student's work, rebases, or force pushes. Fix mistakes
    with a new commit. Do not push; the student pushes.
+6. **This folder is its own git repository.** It sits inside the course repo
+   (`csc299-main`), where `Final Project/` shows as untracked. Run git
+   commands from this folder and commit here, never in the outer repo.
+7. **Animation names and durations must match across files.** Each step's
+   animation name appears in three places: `STEP_ANIMATIONS` in `web.py`,
+   `ANIMATIONS` in `static/app.js`, and `@keyframes` in `static/style.css`.
+   Each duration is written twice: `ms` in `app.js` and the `animation:`
+   length in `style.css`. Change them together.
+8. **Every change applies to both versions.** New steps, rules, and requirements go into both the terminal game (`game.py`) and the browser game, unless the student says otherwise.
