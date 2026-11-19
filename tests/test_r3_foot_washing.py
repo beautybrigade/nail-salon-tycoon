@@ -21,7 +21,8 @@ STATIC = Path(__file__).resolve().parent.parent / "static"
 def test_r3_pedicure_requires_foot_washing_right_after_health():
     steps = salon.required_steps(make_client(salon.PEDICURE))
     assert steps == [S.ASK_HEALTH, FEET_WASH, S.FILE, S.NIP_CUTICLES,  # R10
-                     S.BUFF, S.POLISH]
+                     S.BUFF, salon.Pick(S.PICK_COLOR, "Cherry Red"),  # R12
+                     S.POLISH]
 
 
 def test_r3_pedicure_washes_feet_before_removing_product():

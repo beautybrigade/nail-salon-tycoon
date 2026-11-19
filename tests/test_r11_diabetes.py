@@ -26,7 +26,8 @@ def test_r11_diabetic_client_needs_no_nipping(service, has_product):
 def test_r11_diabetic_manicure_exact_steps():
     client = make_client(salon.MANICURE, condition=DIABETES)
     assert salon.required_steps(client) == [
-        S.ASK_HEALTH, S.WASH_HANDS, S.FILE, S.BUFF, S.POLISH,
+        S.ASK_HEALTH, S.WASH_HANDS, salon.Pick(S.FILE, "almond"), S.BUFF,
+        salon.Pick(S.PICK_COLOR, "Cherry Red"), S.POLISH,  # R12, R13 (round 5)
     ]
 
 
@@ -34,7 +35,8 @@ def test_r11_diabetic_combo_skips_nipping_on_hands_and_feet():
     client = make_client(salon.COMBO, has_product=True, condition=DIABETES)
     assert salon.required_steps(client) == [
         S.ASK_HEALTH, S.WASH_HANDS,
-        S.REMOVE_PRODUCT, S.FILE, S.BUFF, S.POLISH,
+        S.REMOVE_PRODUCT, salon.Pick(S.FILE, "almond"), S.BUFF,
+        salon.Pick(S.PICK_COLOR, "Cherry Red"), S.POLISH,  # R12, R13 (round 5)
         S.WASH_FEET,
         S.REMOVE_PRODUCT, S.FILE, S.BUFF, S.POLISH,
     ]
@@ -48,7 +50,8 @@ def test_r11_other_conditions_still_need_nipping(condition):
 
 def test_r11_diabetic_client_without_nipping_earns_the_star():
     client = make_client(salon.PEDICURE, condition=DIABETES)
-    steps = [S.ASK_HEALTH, S.WASH_FEET, S.FILE, S.BUFF, S.POLISH]
+    steps = [S.ASK_HEALTH, S.WASH_FEET, S.FILE, S.BUFF,
+             salon.Pick(S.PICK_COLOR, "Cherry Red"), S.POLISH]  # R12 (round 5)
     result = salon.finish_service(client, steps)
     assert result.satisfied and result.earned == salon.PEDICURE.price
 
@@ -57,7 +60,8 @@ def test_r11_diabetic_client_without_nipping_earns_the_star():
 def test_r11_nipping_a_diabetic_client_makes_them_unsatisfied(service):
     client = make_client(service, condition=DIABETES)
     steps = salon.required_steps(client)
-    steps.insert(steps.index(S.FILE) + 1, NIP)  # where it goes for others
+    first_file = [salon.step_of(s) for s in steps].index(S.FILE)
+    steps.insert(first_file + 1, NIP)  # where it goes for others
     result = salon.finish_service(client, steps)
     assert not result.satisfied and result.earned == 0
 
@@ -78,7 +82,9 @@ def test_r11_terminal_shows_the_right_steps_for_a_diabetic_client(monkeypatch, c
     list of correct steps has no nipping in it."""
     client = make_client(salon.MANICURE, condition=DIABETES)
     picks = [S.ASK_HEALTH, S.WASH_HANDS, S.FILE, NIP, S.BUFF, S.POLISH]
-    choices = iter([str(game.MENU.index(s) + 1) for s in picks] + [str(game.FINISH)])
+    answers = [str(game.MENU.index(s) + 1) for s in picks] + [str(game.FINISH)]
+    answers.insert(3, str(salon.NAIL_SHAPES.index("almond") + 1))  # R13: File asks
+    choices = iter(answers)
     monkeypatch.setattr("builtins.input", lambda prompt="": next(choices))
     result = game.run_service(client)
     out = capsys.readouterr().out

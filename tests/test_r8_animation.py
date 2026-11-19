@@ -72,7 +72,8 @@ def test_r8_nails_look_polished_after_polish_step():
     look = salon.nail_looks(client, salon.required_steps(client))[salon.HANDS]
     assert look == salon.NailLook(has_product=False, filed=True,
                                   buffed=True, polish_color="Electric Blue",
-                                  cuticles_nipped=True)  # R10 (round 4)
+                                  cuticles_nipped=True,  # R10 (round 4)
+                                  shape="almond")        # R13 (round 5)
 
 
 def test_r8_talking_and_washing_do_not_change_the_nails():

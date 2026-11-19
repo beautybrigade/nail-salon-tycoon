@@ -25,14 +25,16 @@ def test_r10_step_is_called_nip_cuticles():
 
 
 def test_r10_manicure_nips_between_file_and_buff():
-    steps = salon.required_steps(make_client(salon.MANICURE))
-    assert steps == [S.ASK_HEALTH, S.WASH_HANDS, S.FILE, NIP, S.BUFF, S.POLISH]
+    steps = [salon.step_of(s) for s in salon.required_steps(make_client(salon.MANICURE))]
+    assert steps == [S.ASK_HEALTH, S.WASH_HANDS, S.FILE, NIP, S.BUFF,
+                     S.PICK_COLOR, S.POLISH]  # PICK_COLOR: R12 (round 5)
 
 
 @pytest.mark.parametrize("service", salon.SERVICES, ids=lambda s: s.name)
 @pytest.mark.parametrize("has_product", [False, True])
 def test_r10_every_nip_comes_right_after_file_and_right_before_buff(service, has_product):
-    steps = salon.required_steps(make_client(service, has_product=has_product))
+    steps = [salon.step_of(s)  # round 5: the hands' File carries a shape (R13)
+             for s in salon.required_steps(make_client(service, has_product=has_product))]
     nip_positions = [i for i, s in enumerate(steps) if s is NIP]
     assert len(nip_positions) == len(service.areas)
     for i in nip_positions:
@@ -40,10 +42,11 @@ def test_r10_every_nip_comes_right_after_file_and_right_before_buff(service, has
 
 
 def test_r10_combo_nips_both_hands_and_feet():
-    steps = salon.required_steps(make_client(salon.COMBO, has_product=True))
+    steps = [salon.step_of(s)
+             for s in salon.required_steps(make_client(salon.COMBO, has_product=True))]
     assert steps == [
         S.ASK_HEALTH, S.WASH_HANDS,
-        S.REMOVE_PRODUCT, S.FILE, NIP, S.BUFF, S.POLISH,   # hands
+        S.REMOVE_PRODUCT, S.FILE, NIP, S.BUFF, S.PICK_COLOR, S.POLISH,   # hands
         S.WASH_FEET,
         S.REMOVE_PRODUCT, S.FILE, NIP, S.BUFF, S.POLISH,   # feet
     ]
