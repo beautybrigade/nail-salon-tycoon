@@ -24,3 +24,8 @@ Working in a salon setting can be nerve-wracking, especially for a first time na
 
 - R10: The game must include a new part of the service which includes nipping the cuticles. It must come after filing the nails, and right before buffing.
 - R11: If the client responds with a diabetic medical condition, nipping cuticles must be excluded from the service requirements.
+
+# Round 5 requirements
+
+- R12: When the client arrives and chooses a color, the player must pick that color off the polish wall. If the player picks the wrong color, the client is unsatisfied, and the player will not receive a star. The player will pick the color right before selecting the polish step, after buffing.
+- R13: When the client arrives and chooses a manicure or combo service, they must also choose a nail shape. The options are square, round, stiletto, or almond. Pedicures do not get a shape choice, and for a combo, only the hands get a shape. The shaping will take place right before the filing step and the player must select the correct filing shape option. The nails in animation should show the shape they were filed into. If the incorrect shape is selected by the player, the client will be unsatisfied and the player will not receive a star.
