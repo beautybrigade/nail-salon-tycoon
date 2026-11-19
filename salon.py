@@ -8,7 +8,7 @@ caller passes in, so a seeded Random always produces the same day.
 from __future__ import annotations
 
 import random
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from enum import Enum
 
 # --- Day settings (see spec.md) -------------------------------------------
@@ -20,7 +20,8 @@ WALK_IN_COUNT = 3
 DAILY_GOAL = 150
 PRODUCT_CHANCE = 0.5
 HEALTH_CONDITION_CHANCE = 0.3
-HEALTH_CONDITIONS = ("sensitive skin", "diabetes", "allergic to acetone")
+DIABETES = "diabetes"  # R11: no cuticle nipping for these clients
+HEALTH_CONDITIONS = ("sensitive skin", DIABETES, "allergic to acetone")
 
 # R8: bright polish colors a client can ask for (name -> hex color for drawing)
 POLISH_COLORS = {
@@ -48,6 +49,7 @@ class Step(Enum):
     WASH_FEET = "Wash feet in foot bath"  # R3, round 3
     REMOVE_PRODUCT = "Remove product"
     FILE = "File"
+    NIP_CUTICLES = "Nip cuticles"  # R10, round 4
     BUFF = "Buff"
     POLISH = "Polish"
 
@@ -130,14 +132,17 @@ def required_steps(client: Client) -> list[Step]:
     """R2, R3, R4: the one correct sequence of steps for this client.
 
     Each area is washed just before it is worked on: hands with WASH_HANDS,
-    feet with WASH_FEET (R3 as changed in round 3).
+    feet with WASH_FEET (R3 as changed in round 3). Each area's cuticles are
+    nipped after filing and before buffing (R10), except for a client with
+    diabetes (R11).
     """
+    nip = [] if client.health_condition == DIABETES else [Step.NIP_CUTICLES]
     steps = [Step.ASK_HEALTH]
     for area in client.service.areas:
         steps.append(Step.WASH_HANDS if area == HANDS else Step.WASH_FEET)
         if client.has_product:
             steps.append(Step.REMOVE_PRODUCT)
-        steps += [Step.FILE, Step.BUFF, Step.POLISH]
+        steps += [Step.FILE, *nip, Step.BUFF, Step.POLISH]
     return steps
 
 
@@ -167,6 +172,7 @@ class NailLook:
     filed: bool
     buffed: bool
     polish_color: str | None   # None until polished
+    cuticles_nipped: bool = False  # R10: ragged cuticles until nipped
 
 
 def _area_index(client: Client, steps_taken: list[Step]) -> int:
@@ -195,14 +201,15 @@ def nail_looks(client: Client, steps_taken: list[Step]) -> dict[str, NailLook]:
         area = working_area(client, done)
         look = looks[area]
         if step is Step.REMOVE_PRODUCT:
-            look = NailLook(False, look.filed, look.buffed, look.polish_color)
+            look = replace(look, has_product=False)
         elif step is Step.FILE:
-            look = NailLook(look.has_product, True, look.buffed, look.polish_color)
+            look = replace(look, filed=True)
+        elif step is Step.NIP_CUTICLES:
+            look = replace(look, cuticles_nipped=True)
         elif step is Step.BUFF:
-            look = NailLook(look.has_product, look.filed, True, look.polish_color)
+            look = replace(look, buffed=True)
         elif step is Step.POLISH:
-            look = NailLook(look.has_product, look.filed, look.buffed,
-                            client.polish_color)
+            look = replace(look, polish_color=client.polish_color)
         looks[area] = look
         done.append(step)
     return looks
@@ -244,8 +251,9 @@ def rules() -> list[RuleSection]:
             f'"{Step.WASH_FEET.value}" for the feet.',
             f"   b. {Step.REMOVE_PRODUCT.value}, only if the client has old "
             "polish on.",
-            f"   c. {Step.FILE.value}, then {Step.BUFF.value}, then "
-            f"{Step.POLISH.value}.",
+            f"   c. {Step.FILE.value}, then {Step.NIP_CUTICLES.value}, then "
+            f"{Step.BUFF.value}, then {Step.POLISH.value}. Never nip the "
+            f"cuticles of a client with {DIABETES}.",
             "3. Finish service.",
         )),
         RuleSection("Stars and pay", (
