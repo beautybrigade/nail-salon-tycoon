@@ -41,3 +41,11 @@ These rules apply to every session in this project.
    per button. When a step is added, add a rule for the new last button, or it
    shows up plain grey. (Polish was grey from round 3 until round 4 because of
    this.)
+10. **Only `salon.py` decides when a step needs a choice.** A step taken with
+    a choice (a polish color, a nail shape) is a `salon.Pick(step, choice)`
+    in the sequence; other steps are plain `Step` values. When a step needs
+    a choice, and which options to offer, comes only from
+    `salon.choices_for()`. `game.py` and `static/` only ask the question
+    they are given and never decide when to ask. Code that compares steps
+    uses `salon.step_of()`, and code that shows them uses
+    `salon.move_label()`.
