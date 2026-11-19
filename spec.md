@@ -1,10 +1,11 @@
-# Nail Salon Tycoon — Spec (rounds 1 to 3)
+# Nail Salon Tycoon — Spec (rounds 1 to 4)
 
 A game in which the player is a first-time nail technician working one day in a
 salon. Round 1 made it a terminal game (R1–R6). Round 2 adds an animated
 browser version (R7, R8); the rules of the day stay the same. Round 3 adds a
 rules screen before the day begins (R9) and a foot-washing step for pedicures
-(R3 changed). Decisions marked
+(R3 changed). Round 4 adds a cuticle-nipping step (R10) that is skipped for
+clients with diabetes (R11). Decisions marked
 **(student)** were answered by the student; the rest were chosen by the
 assistant and may be revisited.
 
@@ -38,7 +39,8 @@ For the combo, the hands are always done first, then the feet.
 
 ## Steps the player can take (R2, R3, R4) **(student: one step at a time)**
 
-(Round 3 added step 3, **Wash feet in foot bath**; see "Round 3" below.)
+(Round 3 added step 3, **Wash feet in foot bath**; round 4 added step 6,
+**Nip cuticles**; see "Round 3" and "Round 4" below.)
 
 For each client, the player picks steps one at a time from a numbered menu:
 
@@ -47,9 +49,10 @@ For each client, the player picks steps one at a time from a numbered menu:
 3. Wash feet in foot bath
 4. Remove product
 5. File
-6. Buff
-7. Polish
-8. Finish service
+6. Nip cuticles
+7. Buff
+8. Polish
+9. Finish service
 
 The player can pick any step in any order. The game does not stop them; it
 judges the whole sequence when they choose **Finish service**.
@@ -66,23 +69,26 @@ For each client the one correct sequence is:
      feet. Never for a manicure, and for a combo only once, after the hands
      are polished and before any work on the feet.
    - **Remove product** (R4), only if the client arrived with product on.
-   - **File**, then **Buff**, then **Polish** (R4).
+   - **File**, then **Nip cuticles** (R10, round 4), then **Buff**, then
+     **Polish** (R4). **Nip cuticles** is left out when the client has
+     diabetes (R11, round 4).
 
 Examples:
 
-- Manicure, no product: health, wash hands, file, buff, polish
-- Pedicure, with product: health, wash feet, remove, file, buff, polish
-- Combo, with product: health, wash hands, remove, file, buff, polish,
-  wash feet, remove, file, buff, polish
+- Manicure, no product: health, wash hands, file, nip, buff, polish
+- Pedicure, with product: health, wash feet, remove, file, nip, buff, polish
+- Combo, with product: health, wash hands, remove, file, nip, buff, polish,
+  wash feet, remove, file, nip, buff, polish
+- Manicure, client has diabetes: health, wash hands, file, buff, polish
 
-(For a combo, "has product" applies to both hands and feet.)
+(For a combo, "has product" and "has diabetes" apply to both hands and feet.)
 
 ### Health conditions (R2)
 
 When the player asks, the client answers either "No conditions" or one of a
-small fixed list (for example "sensitive skin", "diabetes", "allergic to
-acetone"). In round 1 the answer is shown to the player for information only;
-it does not change the correct sequence.
+small fixed list ("sensitive skin", "diabetes", "allergic to acetone"). From
+round 4, **diabetes** changes the correct sequence (R11, see "Round 4" below).
+The other answers are still shown for information only.
 
 ## Mistakes **(student: any skipped or wrong step)**
 
@@ -99,6 +105,9 @@ correct sequence. That includes:
 - skipping product removal when product is on, or removing product when there
   is none;
 - skipping filing, buffing, or polishing, or doing them out of order;
+- skipping cuticle nipping for a client without diabetes, or nipping anywhere
+  other than right after filing and right before buffing (round 4);
+- nipping the cuticles of a client with diabetes (round 4);
 - repeating a step that should only happen once.
 
 ## Star and earnings (R5)
@@ -156,6 +165,7 @@ first **Polish** step (the hands are done), matching "hands, then feet".
 | Wash feet in foot bath      | (round 3) see "Round 3: foot washing" below         |
 | Remove product              | a cotton pad wipes across the nails                 |
 | File                        | a nail file slides back and forth over the nails    |
+| Nip cuticles                | (round 4) see "Round 4: cuticle nipping" below      |
 | Buff                        | a buffer block rubs in circles over the nails       |
 | Polish                      | a brush sweeps color onto the nails, then sparkles  |
 
@@ -169,6 +179,8 @@ steps taken so far:
 - **old product**: if the client arrived with product, the nails show a dull,
   chipped old color until **Remove product**;
 - **filed**: after **File**, the nails have a short, smooth, rounded tip;
+- **cuticles nipped** (round 4): every nail starts with a ragged cuticle edge
+  at its base; after **Nip cuticles** the edge is a clean, neat line;
 - **buffed**: after **Buff**, the nails have a soft shine;
 - **polished**: after **Polish**, the nails are the client's requested color
   with a glossy shine.
@@ -204,7 +216,8 @@ example, polishing before filing still paints the nails.
   - the services and their prices (the combo is hands first, then feet);
   - the full correct order of steps: health question first; then for each area
     wash it (hands: ask client to wash hands; feet: wash feet in foot bath),
-    remove product only if there is old polish, then file, buff, polish;
+    remove product only if there is old polish, then file, nip cuticles
+    (round 4: never for a client with diabetes), buff, polish;
   - that the client gives a star and pays the full price only if every step is
     right, and pays nothing otherwise;
   - the daily goal ($150).
@@ -229,6 +242,37 @@ example, polishing before filing still paints the nails.
   the nails. The animation name is `wash-feet`, separate from `wash-hands`.
 - Like every wrong step, picking it at the wrong time still plays the
   animation, on whichever area is shown, and is judged only at **Finish**.
+
+## Round 4: cuticle nipping (R10, R11)
+
+- **Nip cuticles** is a new step the player must pick, judged like every other
+  step (see "The correct sequence" and "Mistakes" above). It comes right after
+  **File** and right before **Buff** (R10).
+- In a combo, the cuticles are nipped on **both** the hands and the feet, once
+  per area. **(student)**
+- **Diabetes (R11):** if the client's health condition is diabetes, the
+  correct sequence has no **Nip cuticles** at all (for a combo, on neither
+  area). Nipping a diabetic client's cuticles anyway is a **mistake**: no star,
+  $0, like any extra step. **(student)**
+- The exception follows the client's real condition, whether or not the
+  player asked. A player who doesn't ask about health conditions already gets
+  no star (R2), so this never rewards skipping the question.
+- The rules screen (R9) says where nipping goes and that it is never done for
+  a client with diabetes. As before, the text is built in `salon.rules()`.
+- Both versions get the new step. In the terminal it prints "You carefully
+  nip the cuticles."
+- Animation (browser): a pair of bright cuticle nippers moves across the base
+  of the nails, its jaws snipping open and shut. The animation name is
+  `nip-cuticles`, 1.8 s long. Halfway through, the nails change to the
+  "cuticles nipped" look. **(student: the nails change)**
+- The ragged cuticles are shown for every client at the start, including
+  clients with diabetes, so the picture never gives away the health answer.
+  For a diabetic client, a correct service ends with the cuticles still
+  ragged.
+- Like every wrong step, nipping at the wrong time still plays the animation
+  and changes the nails, and is judged only at **Finish**.
+- Adding the step adds no new random draw, so a given `--seed` gives the same
+  clients as in round 3.
 
 ## Running
 
