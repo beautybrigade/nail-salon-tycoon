@@ -11,7 +11,7 @@ import random
 
 import salon
 
-MENU = list(salon.Step)  # numbered 1..8 in this order
+MENU = list(salon.Step)  # numbered 1..9 in this order
 FINISH = len(MENU) + 1
 
 
@@ -21,9 +21,13 @@ def format_hour(hour: int) -> str:
 
 def describe_client(client: salon.Client) -> str:
     nails = "has old polish on" if client.has_product else "has bare nails"
+    wants = f"Wants {client.polish_color} polish"  # R12
+    if client.nail_shape:  # R13: hand services only
+        wants += f" and {client.nail_shape} nails"
     return (
         f"{format_hour(client.hour)}  {client.kind.upper()}: "
-        f"{client.service.name} (${client.service.price}), client {nails}."
+        f"{client.service.name} (${client.service.price}), client {nails}. "
+        f"{wants}."
     )
 
 
@@ -36,26 +40,51 @@ def ask_choice() -> int:
         print(f"  Please type a number from 1 to {FINISH}.")
 
 
+def ask_option(question: str, options: tuple[str, ...]) -> str:
+    """Round 5: show numbered options and keep asking until one is chosen."""
+    print(f"  {question}")
+    for number, option in enumerate(options, start=1):
+        print(f"    {number}. {option}")
+    while True:
+        raw = input("  Your choice: ").strip()
+        if raw.isdigit() and 1 <= int(raw) <= len(options):
+            return options[int(raw) - 1]
+        print(f"  Please type a number from 1 to {len(options)}.")
+
+
+QUESTIONS = {  # round 5: what to ask when a step needs a choice
+    salon.Step.PICK_COLOR: "Which color do you take off the polish wall?",
+    salon.Step.FILE: "Which shape do you file?",
+}
+
+
 def run_service(client: salon.Client) -> salon.ServiceResult:
     print()
     print("-" * 60)
     print(describe_client(client))
     if len(client.service.areas) > 1:
         print("Work on the hands first, then the feet.")
-    steps: list[salon.Step] = []
+    steps: list[salon.Move] = []
     while True:
         print()
         for number, step in enumerate(MENU, start=1):
             print(f"  {number}. {step.value}")
         print(f"  {FINISH}. Finish service")
         if steps:
-            print("Steps so far: " + ", ".join(s.value for s in steps))
+            print("Steps so far: " + ", ".join(salon.move_label(s) for s in steps))
         choice = ask_choice()
         if choice == FINISH:
             break
         step = MENU[choice - 1]
-        steps.append(step)
-        if step is salon.Step.ASK_HEALTH:
+        options = salon.choices_for(client, steps, step)
+        picked = ask_option(QUESTIONS[step], options) if options else None
+        steps.append(salon.Pick(step, picked) if picked else step)
+        if step is salon.Step.PICK_COLOR:
+            print(f"  You take the {picked} bottle off the polish wall.")
+        elif step is salon.Step.FILE and picked:
+            article = "an" if picked[0] in "aeiou" else "a"
+            print(f"  You file the nails into {article} {picked} shape.")
+        elif step is salon.Step.ASK_HEALTH:
             print(f"  Client: {salon.health_answer(client)}")
         elif step is salon.Step.WASH_HANDS:
             print("  The client washes their hands.")
@@ -71,7 +100,7 @@ def run_service(client: salon.Client) -> salon.ServiceResult:
         print(f"\nThe client is satisfied and gives you a star! +${result.earned}")
     else:
         print("\nThe client is not satisfied. No star, no payment.")
-        expected = ", ".join(s.value for s in salon.required_steps(client))
+        expected = ", ".join(salon.move_label(s) for s in salon.required_steps(client))
         print(f"  The correct steps were: {expected}")
     return result
 
