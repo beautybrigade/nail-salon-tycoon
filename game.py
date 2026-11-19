@@ -11,7 +11,7 @@ import random
 
 import salon
 
-MENU = list(salon.Step)  # numbered 1..7 in this order
+MENU = list(salon.Step)  # numbered 1..8 in this order
 FINISH = len(MENU) + 1
 
 
@@ -61,6 +61,8 @@ def run_service(client: salon.Client) -> salon.ServiceResult:
             print("  The client washes their hands.")
         elif step is salon.Step.WASH_FEET:
             print("  The client's feet soak in the warm foot bath.")
+        elif step is salon.Step.NIP_CUTICLES:
+            print("  You carefully nip the cuticles.")
         else:
             print(f"  You {step.value.lower()}.")
 
