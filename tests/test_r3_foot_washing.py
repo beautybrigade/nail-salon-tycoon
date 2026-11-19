@@ -20,7 +20,8 @@ STATIC = Path(__file__).resolve().parent.parent / "static"
 
 def test_r3_pedicure_requires_foot_washing_right_after_health():
     steps = salon.required_steps(make_client(salon.PEDICURE))
-    assert steps == [S.ASK_HEALTH, FEET_WASH, S.FILE, S.BUFF, S.POLISH]
+    assert steps == [S.ASK_HEALTH, FEET_WASH, S.FILE, S.NIP_CUTICLES,  # R10
+                     S.BUFF, S.POLISH]
 
 
 def test_r3_pedicure_washes_feet_before_removing_product():
@@ -38,7 +39,8 @@ def test_r3_combo_washes_feet_once_after_the_hands_are_polished():
     first_polish = steps.index(S.POLISH)
     assert steps.index(FEET_WASH) == first_polish + 1
     assert steps[first_polish + 1:] == [FEET_WASH, S.REMOVE_PRODUCT,
-                                        S.FILE, S.BUFF, S.POLISH]
+                                        S.FILE, S.NIP_CUTICLES,  # R10
+                                        S.BUFF, S.POLISH]
 
 
 # --- Mistakes ----------------------------------------------------------------

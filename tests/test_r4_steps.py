@@ -10,23 +10,26 @@ S = salon.Step
 
 def test_r4_manicure_without_product_exact_steps():
     assert salon.required_steps(make_client(salon.MANICURE)) == [
-        S.ASK_HEALTH, S.WASH_HANDS, S.FILE, S.BUFF, S.POLISH,
-    ]
+        S.ASK_HEALTH, S.WASH_HANDS, S.FILE, S.NIP_CUTICLES, S.BUFF, S.POLISH,
+    ]  # R10 (round 4): cuticles are nipped between filing and buffing
 
 
 def test_r4_pedicure_with_product_starts_with_removal():
     # R3 (round 3): the feet are washed before the nail work starts.
+    # R10 (round 4): cuticles are nipped between filing and buffing.
     assert salon.required_steps(make_client(salon.PEDICURE, has_product=True)) == [
-        S.ASK_HEALTH, S.WASH_FEET, S.REMOVE_PRODUCT, S.FILE, S.BUFF, S.POLISH,
+        S.ASK_HEALTH, S.WASH_FEET, S.REMOVE_PRODUCT, S.FILE, S.NIP_CUTICLES,
+        S.BUFF, S.POLISH,
     ]
 
 
 def test_r4_combo_with_product_does_both_areas_in_order():
     assert salon.required_steps(make_client(salon.COMBO, has_product=True)) == [
         S.ASK_HEALTH, S.WASH_HANDS,
-        S.REMOVE_PRODUCT, S.FILE, S.BUFF, S.POLISH,   # hands
+        S.REMOVE_PRODUCT, S.FILE, S.NIP_CUTICLES, S.BUFF, S.POLISH,   # hands
         S.WASH_FEET,                                  # R3 (round 3)
-        S.REMOVE_PRODUCT, S.FILE, S.BUFF, S.POLISH,   # feet
+        S.REMOVE_PRODUCT, S.FILE, S.NIP_CUTICLES, S.BUFF, S.POLISH,   # feet
+        # NIP_CUTICLES: R10 (round 4)
     ]
 
 
