@@ -12,7 +12,11 @@ of the service one at a time:
 - wash their feet in the foot bath (before working on feet),
 - remove old product if there is any,
 - file, nip the cuticles, buff, and polish (never nip the cuticles of a
-  client with diabetes).
+  client with diabetes),
+- when filing the hands, file them into the shape the client wants (square,
+  round, stiletto, or almond),
+- right before polishing, pick the client's color off the polish wall (once
+  per client, even for a combo).
 
 Do every step in the right order and the client gives you a star and pays for
 the service (Manicure $25, Pedicure $35, Mani + Pedi combo $55). Get anything
@@ -57,6 +61,6 @@ pytest is the only extra tool.
 - `game.py`: the terminal menus and messages
 - `web.py`: the local web server for the browser version
 - `static/`: the browser page (HTML, CSS animations, JavaScript)
-- `tests/`: one test file per requirement (R1–R11; R3 has two, for hand and
+- `tests/`: one test file per requirement (R1–R13; R3 has two, for hand and
   foot washing)
 - `docs/decisions/`: decision records
