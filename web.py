@@ -42,6 +42,7 @@ STEP_ANIMATIONS = {
     salon.Step.WASH_FEET: "wash-feet",  # R3, round 3
     salon.Step.REMOVE_PRODUCT: "remove-product",
     salon.Step.FILE: "file-nails",
+    salon.Step.NIP_CUTICLES: "nip-cuticles",  # R10, round 4
     salon.Step.BUFF: "buff-nails",
     salon.Step.POLISH: "polish-nails",
 }
@@ -58,6 +59,7 @@ def look_json(look: salon.NailLook) -> dict:
         "has_product": look.has_product,
         "filed": look.filed,
         "buffed": look.buffed,
+        "cuticles_nipped": look.cuticles_nipped,  # R10
         "polish_color": look.polish_color,
         "polish_hex": salon.POLISH_COLORS.get(look.polish_color),
     }
