@@ -49,3 +49,12 @@ These rules apply to every session in this project.
     they are given and never decide when to ask. Code that compares steps
     uses `salon.step_of()`, and code that shows them uses
     `salon.move_label()`.
+11. **Money and stars are exact `Decimal`s, worked out only in `salon.py`.**
+    Earnings, totals, and stars (1, 0.5, or 0) are `decimal.Decimal`, never
+    `float`. Prices and the goal are whole-dollar `int`s. Python code shows
+    an amount with `salon.money()` ("$25", "$12.50"). `web.py` sends amounts
+    and stars to the page through `web.number()`, because `json` can't
+    handle a `Decimal`. The page only writes down the numbers it gets (its
+    `money()` and `starText()`) and never works out pay or stars, not even
+    halves or sums. To branch on how a service went, use
+    `ServiceResult.mistakes` (0, 1, or 2 for "two or more").
