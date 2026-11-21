@@ -167,7 +167,8 @@ def test_r7_wrong_steps_earn_nothing_and_show_the_correct_steps(server):
     post(server + "/api/step", {"game_id": data["game_id"], "step": "POLISH"})
     _, done = post(server + "/api/finish", {"game_id": data["game_id"]})
     first = salon.generate_day(random.Random(SEED))[0]
-    assert done["result"] == {"satisfied": False, "stars": 0, "earned": 0}
+    assert done["result"] == {"satisfied": False, "stars": 0, "earned": 0,
+                              "mistakes": 2}  # round 6: 2 means "two or more"
     assert done["correct_steps"] == [salon.move_label(s)  # round 5: with choices
                                      for s in salon.required_steps(first)]
 

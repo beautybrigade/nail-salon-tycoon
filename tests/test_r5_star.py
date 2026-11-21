@@ -19,9 +19,11 @@ def test_r5_correct_steps_earn_a_star_and_full_price(service, price):
 
 @pytest.mark.parametrize("service", salon.SERVICES, ids=lambda s: s.name)
 def test_r5_wrong_order_earns_no_star_and_no_money(service):
+    """Round 6: two steps out of order are two mistakes (one alone earns half)."""
     client = make_client(service)
     steps = salon.required_steps(client)
     steps[-1], steps[-2] = steps[-2], steps[-1]  # polish before buff
+    steps[0], steps[1] = steps[1], steps[0]      # wash before the health question
     result = salon.finish_service(client, steps)
     assert not result.satisfied
     assert result.stars == 0

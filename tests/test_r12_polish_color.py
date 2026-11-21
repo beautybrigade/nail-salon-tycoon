@@ -2,6 +2,7 @@
 right after buffing and right before polishing. A wrong color means no star."""
 
 import json
+from decimal import Decimal
 import random
 import threading
 import urllib.error
@@ -90,12 +91,14 @@ def test_r12_the_right_color_earns_the_star(service):
 
 
 @pytest.mark.parametrize("service", salon.SERVICES, ids=lambda s: s.name)
-def test_r12_the_wrong_color_means_no_star(service):
+def test_r12_the_wrong_color_is_one_mistake_half_a_star(service):
     client = make_client(service, color="Hot Pink")
     steps = [pick("Lime Green") if salon.step_of(s) is PICK else s
              for s in salon.required_steps(client)]
     result = salon.finish_service(client, steps)
-    assert not result.satisfied and result.stars == 0 and result.earned == 0
+    # Round 6 (R5): a wrong color is one mistake, so half a star and half pay.
+    assert not result.satisfied and result.mistakes == 1
+    assert result.stars == Decimal("0.5") and result.earned == Decimal(service.price) / 2
 
 
 def test_r12_skipping_the_pick_means_no_star():

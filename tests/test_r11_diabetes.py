@@ -1,6 +1,8 @@
 """R11: if the client has diabetes, cuticle nipping is left out of the service.
 Nipping a diabetic client's cuticles anyway is a mistake (student's decision)."""
 
+from decimal import Decimal
+
 import pytest
 
 import game
@@ -57,13 +59,15 @@ def test_r11_diabetic_client_without_nipping_earns_the_star():
 
 
 @pytest.mark.parametrize("service", salon.SERVICES, ids=lambda s: s.name)
-def test_r11_nipping_a_diabetic_client_makes_them_unsatisfied(service):
+def test_r11_nipping_a_diabetic_client_is_one_mistake(service):
     client = make_client(service, condition=DIABETES)
     steps = salon.required_steps(client)
     first_file = [salon.step_of(s) for s in steps].index(S.FILE)
     steps.insert(first_file + 1, NIP)  # where it goes for others
     result = salon.finish_service(client, steps)
-    assert not result.satisfied and result.earned == 0
+    # Round 6 (R5): one mistake now earns half a star and half the price.
+    assert not result.satisfied and result.mistakes == 1
+    assert result.earned == Decimal(service.price) / 2
 
 
 def test_r11_diabetic_client_says_so_when_asked():

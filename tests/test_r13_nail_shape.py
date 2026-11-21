@@ -8,6 +8,7 @@ import random
 import threading
 import urllib.error
 import urllib.request
+from decimal import Decimal
 from pathlib import Path
 
 import pytest
@@ -94,12 +95,14 @@ def test_r13_the_right_shape_earns_the_star(service, shape):
 
 
 @pytest.mark.parametrize("service", [salon.MANICURE, salon.COMBO], ids=lambda s: s.name)
-def test_r13_the_wrong_shape_means_no_star(service):
+def test_r13_the_wrong_shape_is_one_mistake_half_a_star(service):
     client = make_client(service, shape="round")
     steps = [shaped("stiletto") if s == shaped("round") else s
              for s in salon.required_steps(client)]
     result = salon.finish_service(client, steps)
-    assert not result.satisfied and result.stars == 0 and result.earned == 0
+    # Round 6 (R5): a wrong shape is one mistake, so half a star and half pay.
+    assert not result.satisfied and result.mistakes == 1
+    assert result.stars == Decimal("0.5") and result.earned == Decimal(service.price) / 2
 
 
 def test_r13_filing_the_hands_with_no_shape_means_no_star():
