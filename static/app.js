@@ -71,6 +71,12 @@ const state = {
 };
 
 const $ = (id) => document.getElementById(id);
+// Round 6: write an amount the server sent, with cents only when there are
+// cents ($25, $12.50), and a star count as stars (★★½). The server works out
+// every amount and star; these only write them down.
+const money = (amount) => `$${Number.isInteger(amount) ? amount : amount.toFixed(2)}`;
+const starText = (stars) =>
+  stars ? "★".repeat(Math.floor(stars)) + (Number.isInteger(stars) ? "" : "½") : "–";
 const sleep = (ms) => new Promise((done) => setTimeout(done, REDUCED ? Math.min(ms, 300) : ms));
 
 // --- Talking to the server ---------------------------------------------------
@@ -259,7 +265,7 @@ function renderClient(client, number, total) {
   kind.textContent = client.kind === "walk-in" ? "Walk-in" : "Appointment";
   kind.classList.add(client.kind);
   card.querySelector(".name").textContent = client.service;
-  card.querySelector(".price").textContent = `$${client.price}`;
+  card.querySelector(".price").textContent = money(client.price);
   card.querySelector(".swatch").style.background = client.polish_hex;
   card.querySelector(".color").textContent = client.polish_color;
   if (client.nail_shape) card.querySelector(".shape").textContent = client.nail_shape;
@@ -308,8 +314,8 @@ function setBusy(busy) {
 }
 
 function updateEarned(total) {
-  $("stat-earned").textContent = `Earned $${total}`;
-  $("stat-stars").textContent = "★".repeat(state.stars);
+  $("stat-earned").textContent = `Earned ${money(total)}`;
+  $("stat-stars").textContent = state.stars ? starText(state.stars) : "";
 }
 
 // --- Player actions ------------------------------------------------------------
@@ -340,7 +346,7 @@ async function finishService() {
   setBusy(true);
   try {
     const done = await api("/api/finish", { game_id: state.gameId });
-    state.stars += done.result.stars;
+    state.stars = done.stars_so_far; // round 6: counted by the server
     updateEarned(done.total_so_far);
     showResult(done);
   } catch (err) {
@@ -410,10 +416,18 @@ function showResult(done) {
     modal = openModal(`
       <div class="big-star">★</div>
       <h2>The client is satisfied!</h2>
-      <p>They give you a star and pay <strong>$${r.earned}</strong>.</p>
+      <p>They give you a star and pay <strong>${money(r.earned)}</strong>.</p>
       <button type="button">Next</button>`);
   } else {
-    modal = openModal(`
+    const half = r.mistakes === 1; // round 6 (R5): one mistake, half a star
+    modal = openModal(half ? `
+      <div class="half-star" aria-label="half a star">★</div>
+      <h2>The client is partly satisfied</h2>
+      <p>One step was wrong. Half a star (½) and half pay:
+        <strong>${money(r.earned)}</strong>.</p>
+      <p>The correct steps were:</p>
+      <ol></ol>
+      <button type="button">Next</button>` : `
       <div class="no-star">☹</div>
       <h2>The client is not satisfied</h2>
       <p>No star, no payment.</p>
@@ -445,13 +459,13 @@ function showDay(day) {
       <thead><tr><th>Time</th><th>Client</th><th>Service</th><th>Star</th><th>Earned</th></tr></thead>
       <tbody></tbody>
     </table>
-    <p class="total">Total earnings: $${day.total}</p>
+    <p class="total">Total earnings: ${money(day.total)}</p>
     <p class="goal"></p>
     <button type="button">Play another day</button>`);
   const body = modal.querySelector("tbody");
   for (const r of day.results) {
     const tr = document.createElement("tr");
-    for (const text of [r.time, r.kind, r.service, r.stars ? "★" : "–", `$${r.earned}`]) {
+    for (const text of [r.time, r.kind, r.service, starText(r.stars), money(r.earned)]) {
       const td = document.createElement("td");
       td.textContent = text;
       tr.append(td);
@@ -459,8 +473,8 @@ function showDay(day) {
     body.append(tr);
   }
   modal.querySelector(".goal").textContent = day.goal_met
-    ? `Daily goal of $${day.goal} met. Great work!`
-    : `Daily goal of $${day.goal} not met. Try again tomorrow.`;
+    ? `Daily goal of ${money(day.goal)} met. Great work!`
+    : `Daily goal of ${money(day.goal)} not met. Try again tomorrow.`;
   if (day.goal_met) confetti();
   modal.querySelector("button").addEventListener("click", () => {
     closeModal();

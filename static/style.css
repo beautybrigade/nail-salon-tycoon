@@ -444,6 +444,14 @@ body {
 .modal h2 { margin-top: 0; color: var(--purple); }
 .modal .big-star { font-size: 4rem; color: var(--yellow); text-shadow: 3px 3px 0 var(--orange); }
 .modal .no-star { font-size: 3rem; }
+/* Round 6: half a star for one mistake, yellow on the left half only. */
+.modal .half-star {
+  font-size: 4rem;
+  background: linear-gradient(90deg, var(--yellow) 50%, #ffe3f1 50%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
 .modal ol { text-align: left; }
 .modal table { width: 100%; border-collapse: collapse; margin: 12px 0; }
 .modal th, .modal td { padding: 6px 4px; border-bottom: 2px solid #ffe3f1; }
