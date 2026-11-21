@@ -26,7 +26,7 @@ def describe_client(client: salon.Client) -> str:
         wants += f" and {client.nail_shape} nails"
     return (
         f"{format_hour(client.hour)}  {client.kind.upper()}: "
-        f"{client.service.name} (${client.service.price}), client {nails}. "
+        f"{client.service.name} ({salon.money(client.service.price)}), client {nails}. "
         f"{wants}."
     )
 
@@ -97,12 +97,22 @@ def run_service(client: salon.Client) -> salon.ServiceResult:
 
     result = salon.finish_service(client, steps)
     if result.satisfied:
-        print(f"\nThe client is satisfied and gives you a star! +${result.earned}")
+        print(f"\nThe client is satisfied and gives you a star! "
+              f"+{salon.money(result.earned)}")
     else:
-        print("\nThe client is not satisfied. No star, no payment.")
+        if result.mistakes == 1:  # round 6 (R5)
+            print("\nThe client is partly satisfied: one step was wrong. "
+                  f"Half a star! +{salon.money(result.earned)}")
+        else:
+            print("\nThe client is not satisfied. No star, no payment.")
         expected = ", ".join(salon.move_label(s) for s in salon.required_steps(client))
         print(f"  The correct steps were: {expected}")
     return result
+
+
+# How a result's star is shown, by number of mistakes: a full star, half a
+# star, or none (round 6).
+STAR_MARKS = {0: "★", 1: "½", 2: "–"}
 
 
 def print_summary(day: salon.DayResult) -> None:
@@ -110,16 +120,16 @@ def print_summary(day: salon.DayResult) -> None:
     print("=" * 60)
     print("END OF DAY")
     for r in day.results:
-        star = "*" if r.stars else "-"
+        star = STAR_MARKS[r.mistakes]
         print(
             f"  {format_hour(r.client.hour)}  {r.client.kind:<11} "
-            f"{r.client.service.name:<18} {star}  ${r.earned}"
+            f"{r.client.service.name:<18} {star}  {salon.money(r.earned)}"
         )
-    print(f"Total earnings: ${day.total}")
+    print(f"Total earnings: {salon.money(day.total)}")
     if day.goal_met:
-        print(f"Daily goal of ${day.goal} met. Great work!")
+        print(f"Daily goal of {salon.money(day.goal)} met. Great work!")
     else:
-        print(f"Daily goal of ${day.goal} not met. Try again tomorrow.")
+        print(f"Daily goal of {salon.money(day.goal)} not met. Try again tomorrow.")
 
 
 def print_rules() -> None:
@@ -149,7 +159,7 @@ def main(argv: list[str] | None = None) -> None:
 
     rng = random.Random(args.seed)
     clients = salon.generate_day(rng)
-    print(f"You have {len(clients)} clients today. Goal: ${salon.DAILY_GOAL}.")
+    print(f"You have {len(clients)} clients today. Goal: {salon.money(salon.DAILY_GOAL)}.")
     try:
         results = [run_service(c) for c in clients]
     except (EOFError, KeyboardInterrupt):
