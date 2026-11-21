@@ -22,6 +22,7 @@ import itertools
 import json
 import random
 import webbrowser
+from decimal import Decimal
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -118,9 +119,25 @@ def rules_json() -> dict:
                          for s in salon.rules()]}
 
 
+def number(amount: Decimal | int) -> int | float:
+    """A Decimal amount or star count as a JSON number: 25, 12.5, 0.5 (round 6).
+    Only halves occur, and floats hold halves exactly."""
+    amount = Decimal(amount)
+    return int(amount) if amount == amount.to_integral_value() else float(amount)
+
+
+def result_json(result: salon.ServiceResult) -> dict:
+    return {
+        "satisfied": result.satisfied,
+        "stars": number(result.stars),
+        "earned": number(result.earned),
+        "mistakes": result.mistakes,  # 0, 1, or 2 for "two or more"
+    }
+
+
 def day_json(day: salon.DayResult) -> dict:
     return {
-        "total": day.total,
+        "total": number(day.total),
         "goal": day.goal,
         "goal_met": day.goal_met,
         "results": [
@@ -128,8 +145,9 @@ def day_json(day: salon.DayResult) -> dict:
                 "time": format_hour(r.client.hour),
                 "kind": r.client.kind,
                 "service": r.client.service.name,
-                "stars": r.stars,
-                "earned": r.earned,
+                "stars": number(r.stars),
+                "earned": number(r.earned),
+                "mistakes": r.mistakes,
             }
             for r in day.results
         ],
@@ -250,13 +268,10 @@ class SalonHandler(BaseHTTPRequestHandler):
         client = game.current_client
         result = game.finish()  # ValueError if the day is over
         return {
-            "result": {
-                "satisfied": result.satisfied,
-                "stars": result.stars,
-                "earned": result.earned,
-            },
+            "result": result_json(result),
             "correct_steps": [salon.move_label(s) for s in salon.required_steps(client)],
-            "total_so_far": sum(r.earned for r in game.results),
+            "total_so_far": number(game.day_result().total),
+            "stars_so_far": number(sum(r.stars for r in game.results)),
             "client_number": game.index + 1,
             "next_client": client_json(game.current_client),
             "day": day_json(game.day_result()) if game.is_over else None,
