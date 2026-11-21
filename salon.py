@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import random
 from dataclasses import dataclass, replace
+from decimal import Decimal
 from enum import Enum
 
 # --- Day settings (see spec.md) -------------------------------------------
@@ -198,17 +199,61 @@ def choices_for(client: Client, steps_taken: list[Move], step: Step) -> tuple[st
 @dataclass(frozen=True)
 class ServiceResult:
     client: Client
-    satisfied: bool
-    stars: int
-    earned: int
+    satisfied: bool    # True only with no mistakes
+    stars: Decimal     # 1, 0.5, or 0 (round 6)
+    earned: Decimal    # exact dollars and cents (round 6, decision 0009)
+    mistakes: int = 0  # 0, 1, or 2, where 2 means "two or more"
+
+
+def _one_change_away(wanted: list[Move], taken: list[Move]) -> bool:
+    """True if one change turns `taken` into `wanted`: one skipped step, one
+    extra step, one wrong step, or one step moved to another place."""
+    if len(taken) == len(wanted) - 1:  # one skipped step
+        return any(wanted[:i] + wanted[i + 1:] == taken for i in range(len(wanted)))
+    if len(taken) == len(wanted) + 1:  # one extra step
+        return any(taken[:i] + taken[i + 1:] == wanted for i in range(len(taken)))
+    if len(taken) != len(wanted):
+        return False
+    if sum(a != b for a, b in zip(wanted, taken)) == 1:  # one wrong step
+        return True
+    for i, move in enumerate(taken):  # one step moved, near or far
+        rest = taken[:i] + taken[i + 1:]
+        if any(rest[:j] + [move] + rest[j:] == wanted for j in range(len(taken))):
+            return True
+    return False
+
+
+def count_mistakes(client: Client, steps_taken: list[Move]) -> int:
+    """R5 (round 6): 0 if the steps are exactly right, 1 if one change would
+    make them right, and 2 for "two or more" (see decision 0008)."""
+    wanted, taken = required_steps(client), list(steps_taken)
+    if taken == wanted:
+        return 0
+    return 1 if _one_change_away(wanted, taken) else 2
 
 
 def finish_service(client: Client, steps_taken: list[Move]) -> ServiceResult:
-    """R5: judge the player's steps. A star (and the full price) only if exact."""
-    satisfied = list(steps_taken) == required_steps(client)
-    stars = 1 if satisfied else 0
-    earned = client.service.price if satisfied else 0
-    return ServiceResult(client, satisfied, stars, earned)
+    """R5: judge the player's steps. No mistakes: a star and the full price.
+    Exactly one mistake (round 6): half a star and half the price.
+    Two or more: no star and $0."""
+    mistakes = count_mistakes(client, steps_taken)
+    price = Decimal(client.service.price)
+    if mistakes == 0:
+        stars, earned = Decimal(1), price
+    elif mistakes == 1:
+        stars, earned = Decimal("0.5"), price / 2
+    else:
+        stars, earned = Decimal(0), Decimal(0)
+    return ServiceResult(client, mistakes == 0, stars, earned, mistakes)
+
+
+def money(amount: Decimal | int) -> str:
+    """An amount as text, with cents only when there are cents: "$25",
+    "$12.50" (round 6)."""
+    amount = Decimal(amount)
+    if amount == amount.to_integral_value():
+        return f"${int(amount)}"
+    return f"${amount:.2f}"
 
 
 # --- What the nails look like (R8) ------------------------------------------
@@ -328,7 +373,9 @@ def rules() -> list[RuleSection]:
         RuleSection("Stars and pay", (
             "If every step is right and in order, the client gives you a star "
             "and pays the full price.",
-            "Any missing, extra, or out-of-order step means no star and $0.",
+            "With exactly one mistake (one missing, extra, wrong, or "
+            "out-of-place step), you get half a star and half the price.",
+            "Two or more mistakes mean no star and $0.",
         )),
         RuleSection("Your goal", (
             f"Earn at least ${DAILY_GOAL} by the end of the day.",
@@ -341,14 +388,14 @@ def rules() -> list[RuleSection]:
 @dataclass(frozen=True)
 class DayResult:
     results: tuple[ServiceResult, ...]
-    total: int
+    total: Decimal
     goal: int
     goal_met: bool
 
 
 def end_of_day(results: list[ServiceResult], goal: int = DAILY_GOAL) -> DayResult:
     """R6: total the day's earnings and check them against the daily goal."""
-    total = sum(r.earned for r in results)
+    total = sum((r.earned for r in results), Decimal(0))
     return DayResult(tuple(results), total, goal, total >= goal)
 
 
