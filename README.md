@@ -19,8 +19,10 @@ of the service one at a time:
   per client, even for a combo).
 
 Do every step in the right order and the client gives you a star and pays for
-the service (Manicure $25, Pedicure $35, Mani + Pedi combo $55). Get anything
-wrong and you earn nothing for that client. At the end of the day you see your
+the service (Manicure $25, Pedicure $35, Mani + Pedi combo $55). Make exactly
+one mistake (one missing, extra, wrong, or out-of-place step) and you get half
+a star and half the price ($12.50, $17.50, $27.50). Make two or more and you
+earn nothing for that client. At the end of the day you see your
 total earnings and whether you met the $150 daily goal.
 
 The game shows these rules before the day begins. The full rules are in
@@ -62,5 +64,5 @@ pytest is the only extra tool.
 - `web.py`: the local web server for the browser version
 - `static/`: the browser page (HTML, CSS animations, JavaScript)
 - `tests/`: one test file per requirement (R1–R13; R3 has two, for hand and
-  foot washing)
+  foot washing, and R5 has two, the second for round 6's half star)
 - `docs/decisions/`: decision records
