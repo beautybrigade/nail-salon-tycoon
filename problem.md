@@ -8,7 +8,7 @@ Working in a salon setting can be nerve-wracking, especially for a first time na
 - R2: The program must ask the client if there are any special health conditions that should be taken into consideration before starting the service.
 - R3: The program must ask the client to wash their hands prior to starting any hand services; not needed for pedicures. (changed in round 3)
 - R4: Each service must require filing, buffing, and polishing. If the client already has product on their nails, they will need to begin with product removal first.
-- R5: The client should rate the service with whether they are satisfied or not by giving the player a star at the end of the service. This will determine if money was made from the service. Doing the steps in the wrong order will make the client unsatisfied.
+- R5: The client should rate the service with whether they are satisfied or not by giving the player a star at the end of the service. This will determine if money was made from the service. Doing the steps in the wrong order will make the client unsatisfied. (changed in round 6)
 - R6: At the end of the work day, the program must display the total earnings for the day, and determine if the daily goal was met. 
 
 # Round 2 requirements
@@ -29,3 +29,7 @@ Working in a salon setting can be nerve-wracking, especially for a first time na
 
 - R12: When the client arrives and chooses a color, the player must pick that color off the polish wall. If the player picks the wrong color, the client is unsatisfied, and the player will not receive a star. The player will pick the color right before selecting the polish step, after buffing.
 - R13: When the client arrives and chooses a manicure or combo service, they must also choose a nail shape. The options are square, round, stiletto, or almond. Pedicures do not get a shape choice, and for a combo, only the hands get a shape. The shaping will take place right before the filing step and the player must select the correct filing shape option. The nails in animation should show the shape they were filed into. If the incorrect shape is selected by the player, the client will be unsatisfied and the player will not receive a star.
+
+# Round 6 requirements
+
+- R5 changes: If the player gets more than one part of the service wrong, they will not receive payment for the service. However, if the player only misses one step in the sequence, they will earn half a star and receive half the price of the service.
