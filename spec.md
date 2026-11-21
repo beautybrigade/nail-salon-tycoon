@@ -1,4 +1,4 @@
-# Nail Salon Tycoon — Spec (rounds 1 to 5)
+# Nail Salon Tycoon — Spec (rounds 1 to 6)
 
 A game in which the player is a first-time nail technician working one day in a
 salon. Round 1 made it a terminal game (R1–R6). Round 2 adds an animated
@@ -7,7 +7,8 @@ rules screen before the day begins (R9) and a foot-washing step for pedicures
 (R3 changed). Round 4 adds a cuticle-nipping step (R10) that is skipped for
 clients with diabetes (R11). Round 5 makes the player pick the client's polish
 color off a polish wall (R12) and file the hands into the client's chosen nail
-shape (R13). Decisions marked
+shape (R13). Round 6 changes R5: a service with exactly one mistake earns
+half a star and half the price. Decisions marked
 **(student)** were answered by the student; the rest were chosen by the
 assistant and may be revisited.
 
@@ -110,7 +111,8 @@ The other answers are still shown for information only.
 ## Mistakes **(student: any skipped or wrong step)**
 
 The client is **unsatisfied** if the player's sequence is not exactly the
-correct sequence. That includes:
+correct sequence. From round 6, the game also counts **how many** mistakes
+there were (see "Round 6" below). Mistakes include:
 
 - not asking about health conditions, or asking later than first;
 - not asking for hand washing before a hand service;
@@ -131,12 +133,18 @@ correct sequence. That includes:
 - filing the hands in a shape other than the client's (round 5, R13);
 - repeating a step that should only happen once.
 
-## Star and earnings (R5)
+## Star and earnings (R5, changed in round 6)
 
-- When the service is finished, the client gives the player **1 star if
-  satisfied** and **0 stars if unsatisfied**.
-- A star means the player earns the **full price** of the service. No star
-  means **$0** for that client. There are no tips and no partial payment.
+When the service is finished, the game counts the player's mistakes (see
+"Round 6: half a star for one mistake" below):
+
+| Mistakes     | Stars | Pay             | Manicure | Pedicure | Combo  |
+|--------------|-------|-----------------|----------|----------|--------|
+| none         | 1     | full price      | $25      | $35      | $55    |
+| exactly one  | ½     | half the price  | $12.50   | $17.50   | $27.50 |
+| two or more  | 0     | $0              | $0       | $0       | $0     |
+
+There are no tips. Only a service with no mistakes counts as "satisfied".
 
 ## End of the day (R6) **(student: goal $150)**
 
@@ -355,6 +363,73 @@ example, polishing before filing still paints the nails.
 - The rules screen (R9) adds the color pick and the shape. As before, the
   text is built in `salon.rules()`.
 - Menu numbers: Pick polish color is step 8, so Polish is 9 and Finish is 10.
+
+## Round 6: half a star for one mistake (R5 changed)
+
+### What counts as one mistake **(student: any one mistake)**
+
+The game compares the player's steps to the one correct sequence (decision
+0001) and counts the mistakes as **0**, **1**, or **2 or more**. It is
+exactly **one** mistake when one of these changes turns the player's steps
+into the correct sequence:
+
+- **one skipped step**: one correct step is missing (for example no Buff, or
+  no health question);
+- **one extra step**: one step too many (for example a second hand wash, a
+  Remove product when there was no old polish, or picking the color again
+  for the feet of a combo);
+- **one wrong step**: one step in the right place is the wrong one. A wrong
+  polish color or a wrong nail shape is one wrong step (R12, R13);
+- **one step in the wrong place**: one step taken out and done somewhere
+  else, near or far (for example Polish before Buff, or the health question
+  asked last). This counts as one mistake, not two.
+
+Anything else, such as two skipped steps, a skipped step plus a wrong color,
+or two steps moved, is two or more mistakes: no star and $0. The rule is
+written once, in `salon.py` (`count_mistakes()`), see decision 0008.
+
+- **Safety mistakes count the same** **(student)**: not asking about health
+  conditions, or nipping a diabetic client's cuticles, is one mistake like
+  any other. If it is the only one, the player still gets half a star and
+  half pay.
+- **A combo is one service** **(student)**: mistakes are counted across the
+  hands and the feet together. One mistake anywhere earns $27.50; one on the
+  hands and one on the feet earns $0.
+
+### Money with cents **(student: keep the cents)**
+
+- Half pay is exactly half the price: $12.50, $17.50, $27.50. The day's total
+  can have cents (for example $142.50), and the $150 goal is checked against
+  that exact total.
+- Amounts are kept as exact decimals (Python's `Decimal`), never as rounded
+  floats, see decision 0009. Prices stay whole dollars.
+- Amounts are shown with cents only when there are cents: "$25", "$12.50",
+  "$142.50". `salon.money()` makes this text for the terminal and the rules;
+  the page writes amounts the same way.
+
+### What the player sees
+
+- After a service with one mistake, the terminal prints
+  "The client is partly satisfied: one step was wrong. Half a star! +$12.50"
+  and then the correct steps, as it does after a failed service.
+- The browser result pop-up shows a half star, the same message, the amount,
+  and the correct steps.
+- Stars are shown as ★ for one, ½ for half, and – for none, in the end-of-day
+  summary (terminal and browser). The browser's star counter adds up the
+  day's stars, sent by the server.
+- The rules screen (R9) explains full, half, and no pay. As before, the text
+  is built in `salon.rules()`.
+- Confetti only for a full star.
+
+### Notes
+
+- `ServiceResult` gains `mistakes` (0, 1, or 2 meaning "2 or more").
+  `stars` and `earned` are `Decimal`s; `satisfied` stays true only with no
+  mistakes.
+- The JSON from `web.py` sends `stars`, `earned`, and totals as numbers
+  (for example `0.5` and `12.5`), plus `mistakes`.
+- Round 6 adds no random draw, so a given `--seed` gives the same day as in
+  round 5.
 
 ## Running
 
